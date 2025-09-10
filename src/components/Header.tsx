@@ -2,12 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
+import AuthModal from './AuthModal';
+import UserDropdown from './UserDropdown';
+import CartSidebar from './CartSidebar';
 
 const Header = () => {
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
   const [isFading, setIsFading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
+  const { state: cartState, toggleCart } = useCart();
 
   const announcements = [
     "10% off when you subscribe to our emails. Brand exclusions apply. T&Cs apply",
@@ -31,17 +40,31 @@ const Header = () => {
     router.push('/');
   };
 
+  const handleLoginClick = () => {
+    setAuthModalMode('login');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleSignupClick = () => {
+    setAuthModalMode('signup');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleAuthModalClose = () => {
+    setIsAuthModalOpen(false);
+  };
+
   const categories = [
-    "What's New",
-    "T-Shirts",
-    "Shirts",
-    "Hoodies",
-    "Jackets",
-    "Pants",
-    "Jeans",
-    "Shorts",
-    "Sweaters",
-    "Sale"
+    { name: "What's New", isActive: true, href: "/#whats-new-today" },
+    { name: "T-Shirts", isActive: true, href: "/products?category=t-shirts" },
+    { name: "Hoodies", isActive: true, href: "/products?category=hoodies" },
+    { name: "Shirts", isActive: false, href: "#", label: "Coming Soon" },
+    { name: "Jackets", isActive: false, href: "#", label: "Coming Soon" },
+    { name: "Pants", isActive: false, href: "#", label: "Coming Soon" },
+    { name: "Jeans", isActive: false, href: "#", label: "Coming Soon" },
+    { name: "Shorts", isActive: false, href: "#", label: "Coming Soon" },
+    { name: "Sweaters", isActive: false, href: "#", label: "Coming Soon" },
+    { name: "Sale", isActive: false, href: "#", label: "Coming Soon" }
   ];
 
   return (
@@ -73,15 +96,68 @@ const Header = () => {
               </svg>
             </button>
 
-            {/* Left - Login/Signup (Hidden on mobile) */}
-            <div className="hidden md:flex items-center space-x-3 group cursor-pointer hover:scale-105 transition-all duration-200">
-              <div className="p-2 rounded-full group-hover:bg-gray-100 transition-all duration-200">
-                <svg className="w-5 h-5 text-black group-hover:text-gray-700 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <span className="text-sm text-black group-hover:text-gray-700 font-medium transition-all duration-200">Login / Sign up</span>
-            </div> 
+         {/* Left - Authentication Section (Hidden on mobile) */}
+<div className="hidden md:flex items-center">
+  {isAuthenticated ? (
+    <UserDropdown />
+  ) : (
+    <div className="flex items-center space-x-4">
+      {/* Login */}
+      <div
+        onClick={handleLoginClick}
+        className="flex items-center space-x-1 cursor-pointer group hover:scale-105 transition-all duration-200"
+      >
+        <svg
+          className="w-4 h-4 text-gray-800 group-hover:text-gray-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          {/* Login Icon → Arrow into a door */}
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 
+               2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 
+               21h6a2.25 2.25 0 002.25-2.25V15M12 9l3 3m0 
+               0l-3 3m3-3H3"
+          />
+        </svg>
+        <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
+          Login
+        </span>
+      </div>
+
+      {/* Sign Up */}
+      <div
+        onClick={handleSignupClick}
+        className="flex items-center space-x-1 cursor-pointer group hover:scale-105 transition-all duration-200"
+      >
+        <svg
+          className="w-4 h-4 text-gray-800 group-hover:text-gray-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          {/* Sign Up Icon → User with plus */}
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 
+               3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 
+               1115 0v.75H4.5v-.75zM18 9v3m0 0v3m0-3h3m-3 
+               0h-3"
+          />
+        </svg>
+        <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
+          Sign Up
+        </span>
+      </div>
+    </div>
+  )}
+</div>
 
             {/* Center - Premium Logo */}
             <div 
@@ -110,10 +186,18 @@ const Header = () => {
                 </svg>
               </button>
               
-              <button className="p-2 rounded-full text-black hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 cursor-pointer group hover:scale-105">
+              <button
+                onClick={toggleCart}
+                className="relative p-2 rounded-full text-black hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 cursor-pointer group hover:scale-105"
+              >
                 <svg className="w-5 h-5 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
+                {cartState.totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-black text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                    {cartState.totalItems > 99 ? '99+' : cartState.totalItems}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -124,15 +208,32 @@ const Header = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-gray-200">
           <div className="px-4 py-4 space-y-4">
-            {/* Mobile Login/Signup */}
-            <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
-              <div className="p-2 rounded-full bg-gray-100">
-                <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+            {/* Mobile Authentication */}
+            {isAuthenticated ? (
+              <div className="pb-4 border-b border-gray-200">
+                <UserDropdown />
               </div>
-              <span className="text-sm text-black font-medium">Login / Sign up</span>
-            </div>
+            ) : (
+              <div className="pb-4 border-b border-gray-200 space-y-3">
+                <button
+                  onClick={handleLoginClick}
+                  className="w-full flex items-center space-x-3 text-left"
+                >
+                  <div className="p-2 rounded-full bg-gray-100">
+                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm text-black font-medium">Login</span>
+                </button>
+                <button
+                  onClick={handleSignupClick}
+                  className="w-full bg-black text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-gray-800 transition-all duration-200"
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
             
             {/* Mobile Search */}
             <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
@@ -149,11 +250,26 @@ const Header = () => {
               {categories.map((category, index) => (
                 <a
                   key={index}
-                  href={`/${category.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="block py-3 text-base font-medium text-black hover:text-gray-700 transition-colors duration-200 border-b border-gray-100"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  href={category.href}
+                  className={`block py-3 text-base font-medium border-b border-gray-100 ${
+                    category.isActive 
+                      ? 'text-black hover:text-gray-700' 
+                      : 'text-gray-400 cursor-not-allowed'
+                  } transition-colors duration-200`}
+                  onClick={(e) => {
+                    if (!category.isActive) {
+                      e.preventDefault();
+                    } else {
+                      setIsMobileMenuOpen(false);
+                    }
+                  }}
                 >
-                  {category}
+                  {category.name}
+                  {!category.isActive && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      {category.label}
+                    </span>
+                  )}
                 </a>
               ))}
             </div>
@@ -168,16 +284,41 @@ const Header = () => {
             {categories.map((category, index) => (
               <a
                 key={index}
-                href={`/${category.toLowerCase().replace(/\s+/g, '-')}`}
-                className="text-sm font-normal text-black hover:text-gray-700 transition-all duration-200 whitespace-nowrap tracking-wide relative group cursor-pointer hover:scale-105"
+                href={category.href}
+                className={`text-sm font-normal transition-all duration-200 whitespace-nowrap tracking-wide relative group cursor-pointer hover:scale-105 ${
+                  category.isActive 
+                    ? 'text-black hover:text-gray-700' 
+                    : 'text-gray-400 cursor-not-allowed'
+                }`}
+                onClick={(e) => {
+                  if (!category.isActive) {
+                    e.preventDefault();
+                  }
+                }}
+                title={!category.isActive ? category.label : undefined}
               >
-                {category}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all duration-300 group-hover:w-full"></span>
+                {category.name}
+                {category.isActive && (
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all duration-300 group-hover:w-full"></span>
+                )}
               </a>
             ))}
           </nav>
         </div>
       </div>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={handleAuthModalClose}
+        initialMode={authModalMode}
+      />
+
+      {/* Cart Sidebar */}
+      <CartSidebar onAuthRequired={() => {
+        setAuthModalMode('login');
+        setIsAuthModalOpen(true);
+      }} />
     </header>
   );
 };
@@ -185,11 +326,3 @@ const Header = () => {
 export default Header;
 
 
-// we cannot write so much content on home page so we also need to tell about our other content 
-// we alo need to geive hint of our other products for that we need to tell them by showing something 
-// one home page 
-// asls oneed to improve over all desiggfning and the othe things like product apage as use should 
-// ok spring seciutrity is use for secure our forntend and backend as attacker should not attacjt ghe -pbakendang frontebn enot aacceissabkle 
-// the also for logout and login w e can use spering security the main file is security config
-// wher we can mentioned that which role has which api to accesss this will secure endpoints 
-// and also we can brcypt our pasword her so password will store in ahsh and attacker sill not see the password 

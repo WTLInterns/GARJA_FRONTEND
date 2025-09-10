@@ -1,0 +1,103 @@
+/* Stars Animation */
+.stars-1,
+.stars-2,
+.stars-3 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  animation: twinkle 3s ease-in-out infinite;
+  background-repeat: repeat;
+}
+
+/* Shooting Star */
+.shooting-star {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.1),
+              0 0 0 8px rgba(255,255,255,0.1),
+              0 0 20px rgba(255,255,255,1);
+  animation: shoot 3s linear infinite;
+}
+
+.shooting-star::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 300px;
+  height: 1px;
+  background: linear-gradient(90deg, #fff, transparent);
+}
+
+@keyframes shoot {
+  0% {
+    transform: rotate(315deg) translateX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(315deg) translateX(-1000px);
+    opacity: 0;
+  }
+}
+
+.stars-1 {
+  background-image: radial-gradient(1px 1px at 25px 5px, white 50%, rgba(255, 255, 255, 0)),
+                    radial-gradient(1px 1px at 50px 25px, white 50%, rgba(255, 255, 255, 0)),
+                    radial-gradient(1px 1px at 125px 20px, white 50%, rgba(255, 255, 255, 0)),
+                    radial-gradient(1.5px 1.5px at 50px 75px, white 50%, rgba(255, 255, 255, 0));
+  animation-delay: 0s;
+}
+
+.stars-2 {
+  background-image: radial-gradient(1px 1px at 75px 45px, white 50%, rgba(255, 255, 255, 0)),
+                    radial-gradient(1px 1px at 100px 65px, white 50%, rgba(255, 255, 255, 0)),
+                    radial-gradient(1.5px 1.5px at 25px 45px, white 50%, rgba(255, 255, 255, 0));
+  animation-delay: 0.4s;
+}
+
+.stars-3 {
+  background-image: radial-gradient(1px 1px at 10px 55px, white 50%, rgba(255, 255, 255, 0)),
+                    radial-gradient(1.5px 1.5px at 150px 85px, white 50%, rgba(255, 255, 255, 0));
+  animation-delay: 0.8s;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+/* Text glow effect */
+.glow {
+  text-shadow: 0 0 10px rgba(255,255,255,0.8),
+               0 0 20px rgba(255,255,255,0.8),
+               0 0 30px rgba(255,255,255,0.8);
+}
+
+.text-glow {
+  transition: text-shadow 0.3s ease;
+}
+
+.text-glow:hover {
+  text-shadow: 0 0 8px rgba(255,255,255,0.6),
+               0 0 12px rgba(255,255,255,0.6);
+}
+
+/* Make links brighter */
+.footer-link {
+  text-shadow: 0 0 5px rgba(255,255,255,0.3);
+}
+
+.footer-link:hover {
+  text-shadow: 0 0 8px rgba(255,255,255,0.6);
+}
