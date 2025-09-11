@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { ApiLoadingProvider } from '@/contexts/ApiLoadingContext';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -106,7 +107,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ApiLoadingProvider>
+      <div className="min-h-screen bg-gray-50 admin-layout">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -212,7 +214,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
         </main>
       </div>
-    </div>
+      </div>
+    </ApiLoadingProvider>
   );
 };
 

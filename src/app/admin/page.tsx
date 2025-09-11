@@ -6,20 +6,22 @@ import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 const AdminLoginPage = () => {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading } = useAdminAuth();
+  const { login, isAuthenticated, isLoading: isAuthChecking } = useAdminAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (wait for auth check to complete)
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isAuthChecking && isAuthenticated) {
       router.push('/admin/dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isAuthChecking, router]);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -43,11 +45,16 @@ const AdminLoginPage = () => {
     
     if (!validateForm()) return;
 
+    setIsSubmitting(true);
     const result = await login(formData.email, formData.password);
     
     if (result.success) {
-      router.push('/admin/dashboard');
+      setShowSuccess(true);
+      setTimeout(() => {
+        router.push('/admin/dashboard');
+      }, 1000);
     } else {
+      setIsSubmitting(false);
       setErrors({ general: result.error || 'Login failed' });
     }
   };
@@ -64,6 +71,21 @@ const AdminLoginPage = () => {
       setErrors(prev => ({ ...prev, general: '' }));
     }
   };
+
+  // Show loading spinner while checking auth status
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 text-black mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -87,6 +109,16 @@ const AdminLoginPage = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Success Message */}
+            {showSuccess && (
+              <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Login successful! Redirecting to dashboard...
+              </div>
+            )}
+
             {/* General Error */}
             {errors.general && (
               <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
@@ -114,7 +146,7 @@ const AdminLoginPage = () => {
                     errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
                   }`}
                   placeholder="Enter admin email"
-                  disabled={isLoading}
+                  disabled={isSubmitting || showSuccess}
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-600">{errors.email}</p>
@@ -140,13 +172,13 @@ const AdminLoginPage = () => {
                     errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
                   }`}
                   placeholder="Enter admin password"
-                  disabled={isLoading}
+                  disabled={isSubmitting || showSuccess}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  disabled={isLoading}
+                  disabled={isSubmitting || showSuccess}
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,16 +201,16 @@ const AdminLoginPage = () => {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isSubmitting || showSuccess}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                {isLoading ? (
+                {isSubmitting || showSuccess ? (
                   <div className="flex items-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Signing In...
+                    {showSuccess ? 'Redirecting...' : 'Signing In...'}
                   </div>
                 ) : (
                   'Sign In to Admin Panel'

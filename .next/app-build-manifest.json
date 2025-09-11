@@ -15,6 +15,7 @@
     "/admin/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
+      "static/css/app/admin/layout.css",
       "static/chunks/app/admin/layout.js"
     ],
     "/admin/page": [
@@ -42,20 +43,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/admin/customers/page.js"
     ],
-    "/admin/settings/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/admin/settings/page.js"
-    ],
     "/admin/analytics/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/admin/analytics/page.js"
     ],
-    "/account-settings/page": [
+    "/admin/settings/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/account-settings/page.js"
+      "static/chunks/app/admin/settings/page.js"
     ],
     "/products/page": [
       "static/chunks/webpack.js",
@@ -66,6 +62,21 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/product/[id]/page.js"
+    ],
+    "/checkout/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/checkout/page.js"
+    ],
+    "/order-success/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/order-success/page.js"
+    ],
+    "/cart/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/cart/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
