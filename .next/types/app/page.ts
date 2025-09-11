@@ -1,4 +1,4 @@
-// File: D:\WTL_Abhishek\React\GARJA_FRONTEND\src\app\page.tsx
+// File: C:\Users\jaywa\Desktop\Abacus\original garja\GARJA_FRONTEND\src\app\page.tsx
 import * as entry from '../../../src/app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
