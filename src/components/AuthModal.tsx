@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthModalProps {
@@ -13,7 +12,7 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) => {
   const [mode, setMode] = React.useState<'login' | 'signup'>(initialMode);
-  const { login } = useAuth();
+  const { login, signup } = useAuth();
 
   // Signup form state
   const [formData, setFormData] = useState({
@@ -153,6 +152,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     try {
       const result = await login(loginData.email, loginData.password);
       if (result.success) {
+        // Play success sound
+        playSuccessSound();
         // Login successful - call onAuthSuccess or close modal
         if (onAuthSuccess) {
           onAuthSuccess();
@@ -175,20 +176,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:8085/auth/signup', {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phoneNumber: formData.phoneNumber,
-        password: formData.password,
-        role: formData.role
-      });
+      const result = await signup(
+        formData.firstName,
+        formData.lastName,
+        formData.email,
+        formData.phoneNumber,
+        formData.password,
+        formData.role as 'USER' | 'ADMIN'
+      );
 
-      if (response.status === 200 || response.status === 201) {
+      if (result.success) {
         // Show success message and play sound
         setShowSuccess(true);
         playSuccessSound();
 
+        // User is automatically logged in after signup
         // Call onAuthSuccess callback if provided, then close modal after 2 seconds
         setTimeout(() => {
           if (onAuthSuccess) {
@@ -197,13 +199,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             onClose();
           }
         }, 2000);
-      }
-    } catch (error: any) {
-      if (error.response) {
-        setError(error.response.data?.message || 'Signup failed. Please try again.');
       } else {
-        setError('Unable to connect to server. Please try again.');
+        setError(result.error || 'Signup failed. Please try again.');
       }
+    } catch (error) {
+      setError('An error occurred during signup. Please try again.');
     } finally {
       setIsLoading(false);
     }

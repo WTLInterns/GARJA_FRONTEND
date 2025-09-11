@@ -30,7 +30,7 @@ interface Address {
 }
 
 const AccountSettingsPage: React.FC = () => {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, resetPassword } = useAuth();
   const router = useRouter();
   
   const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'security'>('profile');
@@ -62,6 +62,7 @@ const AccountSettingsPage: React.FC = () => {
     confirmPassword: ''
   });
   const [passwordErrors, setPasswordErrors] = useState<{[key: string]: string}>({});
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     // Redirect to home if not authenticated
@@ -131,6 +132,8 @@ const AccountSettingsPage: React.FC = () => {
     // Validate password form
     const errors: {[key: string]: string} = {};
     
+    // Note: The API only requires the new password, not the current password
+    // But we can keep the current password field for better UX
     if (!passwordForm.currentPassword) {
       errors.currentPassword = 'Current password is required';
     }
@@ -152,17 +155,31 @@ const AccountSettingsPage: React.FC = () => {
       return;
     }
     
-    setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
-    setPasswordErrors({});
-    setIsSaving(false);
-    showSuccess('Password changed successfully!');
+    setIsChangingPassword(true);
+    
+    try {
+      // Call the reset password API
+      // Note: The API doesn't verify the current password, it just sets a new one
+      // In production, you might want to add an endpoint that verifies the current password first
+      const result = await resetPassword(passwordForm.newPassword);
+      
+      if (result.success) {
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setPasswordErrors({});
+        showSuccess(result.error || 'Password changed successfully!');
+      } else {
+        setPasswordErrors({ general: result.error || 'Failed to change password' });
+      }
+    } catch (error) {
+      console.error('Password change error:', error);
+      setPasswordErrors({ general: 'An error occurred while changing password' });
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleAddressDelete = async (addressId: string) => {
@@ -540,18 +557,24 @@ const AccountSettingsPage: React.FC = () => {
                             passwordErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                           }`}
                         />
-                        {passwordErrors.confirmPassword && (
-                          <p className="text-red-500 text-sm mt-1">{passwordErrors.confirmPassword}</p>
-                        )}
+                      {passwordErrors.confirmPassword && (
+                        <p className="text-red-500 text-sm mt-1">{passwordErrors.confirmPassword}</p>
+                      )}
+                    </div>
+                    
+                    {passwordErrors.general && (
+                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                        {passwordErrors.general}
                       </div>
+                    )}
 
-                      <button
-                        type="submit"
-                        disabled={isSaving}
-                        className="w-full bg-black text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
-                      >
-                        {isSaving ? 'Updating...' : 'Update Password'}
-                      </button>
+                    <button
+                      type="submit"
+                      disabled={isChangingPassword}
+                      className="w-full bg-black text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
+                    >
+                      {isChangingPassword ? 'Updating...' : 'Update Password'}
+                    </button>
                     </div>
                   </form>
 

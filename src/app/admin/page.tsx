@@ -8,7 +8,7 @@ const AdminLoginPage = () => {
   const router = useRouter();
   const { login, isAuthenticated, isLoading } = useAdminAuth();
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -24,8 +24,10 @@ const AdminLoginPage = () => {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Invalid email format';
     }
 
     if (!formData.password) {
@@ -41,7 +43,7 @@ const AdminLoginPage = () => {
     
     if (!validateForm()) return;
 
-    const result = await login(formData.username, formData.password);
+    const result = await login(formData.email, formData.password);
     
     if (result.success) {
       router.push('/admin/dashboard');
@@ -94,28 +96,28 @@ const AdminLoginPage = () => {
 
             
 
-            {/* Username Field */}
+            {/* Email Field */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email Address
               </label>
               <div className="mt-1">
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  autoComplete="username"
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
                   required
-                  value={formData.username}
+                  value={formData.email}
                   onChange={handleInputChange}
                   className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm ${
-                    errors.username ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
                   }`}
-                  placeholder="Enter admin username"
+                  placeholder="Enter admin email"
                   disabled={isLoading}
                 />
-                {errors.username && (
-                  <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                 )}
               </div>
             </div>

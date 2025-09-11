@@ -1,21 +1,24 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiService, AuthUser, LoginData } from '@/utils/api';
+import { authStorage } from '@/utils/authStorage';
+import { AxiosError } from 'axios';
 
 // Types for admin authentication
 export interface AdminUser {
   id: string;
-  username: string;
   email: string;
-  role: 'admin' | 'super_admin';
-  permissions: string[];
+  firstName: string;
+  lastName: string;
+  role: 'ADMIN';
 }
 
 export interface AdminAuthContextType {
   admin: AdminUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
@@ -31,6 +34,17 @@ export const useAdminAuth = () => {
   return context;
 };
 
+// Helper function to convert AuthUser to AdminUser
+const convertAuthUserToAdminUser = (authUser: AuthUser): AdminUser => {
+  return {
+    id: authUser.id.toString(),
+    email: authUser.email,
+    firstName: authUser.firstName,
+    lastName: authUser.lastName,
+    role: 'ADMIN',
+  };
+};
+
 // Admin Auth Provider component
 interface AdminAuthProviderProps {
   children: ReactNode;
@@ -42,56 +56,90 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
 
   // Check for existing admin session on mount
   useEffect(() => {
-    const checkAdminAuthStatus = () => {
+    const checkAdminAuthStatus = async () => {
       try {
-        const storedAdmin = localStorage.getItem('garja_admin');
-        if (storedAdmin) {
-          setAdmin(JSON.parse(storedAdmin));
+        const authData = authStorage.loadAdminAuth();
+        if (authData) {
+          // Verify admin role
+          if (authData.user.role === 'ADMIN') {
+            const adminUser = convertAuthUserToAdminUser(authData.user);
+            setAdmin(adminUser);
+          } else {
+            // Not an admin, clear auth
+            authStorage.clearAdminAuth();
+          }
         }
       } catch (error) {
         console.error('Error checking admin auth status:', error);
-        localStorage.removeItem('garja_admin');
+        authStorage.clearAdminAuth();
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAdminAuthStatus();
+
+    // Listen for auth logout events
+    const handleAuthLogout = () => {
+      setAdmin(null);
+      authStorage.clearAdminAuth();
+    };
+
+    const handleForbidden = (event: CustomEvent) => {
+      console.error('Admin access forbidden:', event.detail.message);
+      setAdmin(null);
+      authStorage.clearAdminAuth();
+    };
+
+    window.addEventListener('auth:logout', handleAuthLogout);
+    window.addEventListener('auth:forbidden', handleForbidden as EventListener);
+    
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+      window.removeEventListener('auth:forbidden', handleForbidden as EventListener);
+    };
   }, []);
 
   // Admin login function
-  const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const loginData: LoginData = { email, password };
+      const authUser = await apiService.auth.login(loginData);
       
-      // Mock admin authentication logic - replace with actual API call
-      // Default admin credentials: admin/admin123 or superadmin/super123
-      if ((username === 'admin' && password === 'admin123') || 
-          (username === 'superadmin' && password === 'super123')) {
-        
-        const mockAdmin: AdminUser = {
-          id: Date.now().toString(),
-          username: username,
-          email: `${username}@garja.com`,
-          role: username === 'superadmin' ? 'super_admin' : 'admin',
-          permissions: username === 'superadmin' 
-            ? ['all'] 
-            : ['products.read', 'products.write', 'orders.read', 'customers.read']
+      // Verify that the user has ADMIN role
+      if (authUser.role !== 'ADMIN') {
+        setIsLoading(false);
+        return { 
+          success: false, 
+          error: 'Access denied. Admin privileges required.' 
         };
-        
-        setAdmin(mockAdmin);
-        localStorage.setItem('garja_admin', JSON.stringify(mockAdmin));
+      }
+      
+      // Save admin auth data to localStorage
+      const saved = authStorage.saveAdminAuth({ token: authUser.token, user: authUser });
+      
+      if (saved) {
+        const adminUser = convertAuthUserToAdminUser(authUser);
+        setAdmin(adminUser);
         setIsLoading(false);
         return { success: true };
       } else {
         setIsLoading(false);
-        return { success: false, error: 'Invalid admin credentials. Try admin/admin123 or superadmin/super123' };
+        return { success: false, error: 'Failed to save authentication data' };
       }
     } catch (error) {
       setIsLoading(false);
+      
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 401) {
+          return { success: false, error: 'Invalid email or password' };
+        } else if (error.response?.data) {
+          return { success: false, error: error.response.data };
+        }
+      }
+      
       return { success: false, error: 'An error occurred during admin login. Please try again.' };
     }
   };
@@ -99,7 +147,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
   // Admin logout function
   const logout = () => {
     setAdmin(null);
-    localStorage.removeItem('garja_admin');
+    authStorage.clearAdminAuth();
   };
 
   const value: AdminAuthContextType = {

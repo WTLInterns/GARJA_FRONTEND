@@ -33,6 +33,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     );
   }
 
+  // ✅ Create safe initials
+  const initials = `${admin?.firstName?.charAt(0) ?? ''}${admin?.lastName?.charAt(0) ?? ''}`.toUpperCase() || admin?.email?.charAt(0).toUpperCase();
+
+  // ✅ Full display name
+  const displayName = admin?.firstName
+    ? `${admin.firstName} ${admin?.lastName ?? ''}`.trim()
+    : admin?.email;
+
   const navigation = [
     {
       name: 'Dashboard',
@@ -106,7 +114,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
       )}
 
-      {/* Sidebar - Now always fixed */}
+      {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
@@ -146,14 +154,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-sm font-medium">
-              {admin.username.charAt(0).toUpperCase()}
+              {initials}
             </div>
             <div className="ml-3 flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {admin.username}
+                {displayName}
               </p>
               <p className="text-xs text-gray-500 capitalize">
-                {admin.role.replace('_', ' ')}
+                {admin.role?.replace('_', ' ')}
               </p>
             </div>
             <button
@@ -169,7 +177,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      {/* Main content - Adjusted margin for fixed sidebar */}
+      {/* Main content */}
       <div className="lg:ml-64 flex-1 flex flex-col min-w-0">
         {/* Top header */}
         <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200">
@@ -185,7 +193,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">
-                Welcome back, {admin.username}
+                Welcome back, {displayName}
               </span>
               <button
                 onClick={() => router.push('/')}

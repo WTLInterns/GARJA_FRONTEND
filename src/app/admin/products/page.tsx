@@ -1,7 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { adminProductService, Product as ServiceProduct } from '@/services/adminProductService';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { useRouter } from 'next/navigation';
+import authDebug from '@/utils/authDebug'; // Import debug utility
 
 interface Product {
   id: string;
@@ -21,11 +25,20 @@ interface ProductFormData {
   category: string;
   price: string;
   stock: string;
-  status: 'active' | 'inactive';
-  image: string;
+  isActive: boolean;  // Changed to boolean for API
+  imageFile: File | null;  // Actual file for upload
+  imagePreview: string;     // Preview URL for display
+  // Size quantity fields - store as strings for input, convert to numbers for API
+  xs: string;
+  m: string;
+  l: string;
+  xl: string;
+  xxl: string;
 }
 
 const ProductsPage = () => {
+  const { isAuthenticated, admin, isLoading: isAuthLoading } = useAdminAuth();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -33,6 +46,7 @@ const ProductsPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
   const [formData, setFormData] = useState<ProductFormData>({
@@ -41,68 +55,81 @@ const ProductsPage = () => {
     category: '',
     price: '',
     stock: '',
-    status: 'active',
-    image: ''
+    isActive: true,  // Default to active (will send "1" to API)
+    imageFile: null,
+    imagePreview: '',
+    xs: '0',
+    m: '0',
+    l: '0',
+    xl: '0',
+    xxl: '0'
   });
 
-  // Mock products data
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'Premium Cotton T-Shirt',
-      description: 'High-quality 100% cotton t-shirt with premium finish and comfortable fit.',
-      category: 'T-Shirts',
-      price: 899,
-      stock: 45,
-      status: 'active',
-      image: '/images/tshirt1.jpg',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      name: 'Classic Hoodie',
-      description: 'Comfortable and stylish hoodie perfect for casual wear and layering.',
-      category: 'Hoodies',
-      price: 1299,
-      stock: 23,
-      status: 'active',
-      image: '/images/hoodie1.jpg',
-      createdAt: '2024-01-14'
-    },
-    {
-      id: '3',
-      name: 'Slim Fit Jeans',
-      description: 'Modern slim-fit jeans with stretch fabric for comfort and style.',
-      category: 'Jeans',
-      price: 1599,
-      stock: 12,
-      status: 'active',
-      image: '/images/jeans1.jpg',
-      createdAt: '2024-01-13'
-    },
-    {
-      id: '4',
-      name: 'Designer Jacket',
-      description: 'Premium designer jacket with contemporary styling and superior craftsmanship.',
-      category: 'Jackets',
-      price: 2499,
-      stock: 8,
-      status: 'inactive',
-      image: '/images/jacket.jpg',
-      createdAt: '2024-01-12'
-    },
-    {
-      id: '5',
-      name: 'Cotton Shirt',
-      description: 'Classic cotton shirt with professional finish, perfect for formal and casual wear.',
-      category: 'Shirts',
-      price: 799,
-      stock: 34,
-      status: 'active',
-      image: '/images/shirt.jpg',
-      createdAt: '2024-01-11'
+  // Products data from API
+  const [products, setProducts] = useState<Product[]>([]);
+  const [apiProducts, setApiProducts] = useState<ServiceProduct[]>([]);
+
+  // Transform API product to local Product format
+  const transformApiProduct = (apiProduct: any): Product => {
+    // Check isActive field - it comes as "1" or "0" string from backend
+    const isActive = apiProduct.isActive === "1" || apiProduct.isActive === 1 || apiProduct.isActive === true;
+    
+    return {
+      id: apiProduct.id.toString(),
+      name: apiProduct.productName,
+      description: apiProduct.description,
+      category: apiProduct.category,
+      price: parseFloat(apiProduct.price),
+      stock: apiProduct.quantity,
+      status: isActive ? 'active' : 'inactive',
+      image: apiProduct.imageUrl || '/images/placeholder.jpg',
+      createdAt: apiProduct.date
+    };
+  };
+
+  // Load products from API
+  useEffect(() => {
+    // Wait for auth check to complete
+    if (isAuthLoading) {
+      return;
     }
-  ]);
+    
+    if (!isAuthenticated) {
+      console.log('Not authenticated, redirecting to admin login');
+      router.push('/admin');
+      return;
+    }
+
+    loadProducts();
+  }, [isAuthenticated, isAuthLoading, router]);
+
+  const loadProducts = async () => {
+    setIsLoadingProducts(true);
+    try {
+      const fetchedProducts = await adminProductService.getAllProducts();
+      setApiProducts(fetchedProducts);
+      const transformedProducts = fetchedProducts.map(transformApiProduct);
+      setProducts(transformedProducts);
+    } catch (error: any) {
+      console.error('Failed to load products:', error);
+      
+      // Handle specific error types
+      if (error.message === 'Admin access required') {
+        showNotification('error', 'Admin access required. Please login as admin.');
+        router.push('/admin');
+      } else if (error.response?.status === 403) {
+        showNotification('error', 'You do not have permission to view products');
+        router.push('/admin');
+      } else if (error.response?.status === 401) {
+        showNotification('error', 'Your session has expired. Please login again.');
+        router.push('/admin');
+      } else {
+        showNotification('error', error.message || 'Failed to load products. Please try again.');
+      }
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
 
   const categories = ['all', 'T-Shirts', 'Hoodies', 'Jeans', 'Jackets', 'Shirts'];
 
@@ -138,8 +165,14 @@ const ProductsPage = () => {
       category: '',
       price: '',
       stock: '',
-      status: 'active',
-      image: ''
+      isActive: true,
+      imageFile: null,
+      imagePreview: '',
+      xs: '0',
+      m: '0',
+      l: '0',
+      xl: '0',
+      xxl: '0'
     });
   };
 
@@ -173,27 +206,34 @@ const ProductsPage = () => {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        name: formData.name,
+      const productData = {
+        productName: formData.name,
+        price: formData.price,
+        quantity: parseInt(formData.stock),
+        isActive: formData.isActive ? "1" : "0",  // Convert boolean to "1" or "0" string
         description: formData.description,
         category: formData.category,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        status: formData.status,
-        image: formData.image || '/images/placeholder.jpg',
-        createdAt: new Date().toISOString().split('T')[0]
+        // Size quantities from form (convert to string or number as needed by API)
+        XS: formData.xs,
+        M: formData.m,
+        L: formData.l,
+        XL: formData.xl,
+        XXL: formData.xxl,
+        // Include image file if uploaded
+        image: formData.imageFile
       };
 
-      setProducts(prev => [newProduct, ...prev]);
+      const response = await adminProductService.addProduct(productData);
+      
+      // Reload products after successful add
+      await loadProducts();
+      
       setShowAddModal(false);
       resetForm();
-      showNotification('success', 'Product added successfully!');
-    } catch (error) {
-      showNotification('error', 'Failed to add product. Please try again.');
+      showNotification('success', response.message || 'Product added successfully!');
+    } catch (error: any) {
+      console.error('Failed to add product:', error);
+      showNotification('error', error.response?.data || 'Failed to add product. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -204,27 +244,35 @@ const ProductsPage = () => {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const updatedProduct: Product = {
-        ...selectedProduct,
-        name: formData.name,
+      const productData = {
+        productName: formData.name,
+        price: formData.price,
+        quantity: parseInt(formData.stock),
+        isActive: formData.isActive ? "1" : "0",  // Convert boolean to "1" or "0" string
         description: formData.description,
         category: formData.category,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        status: formData.status,
-        image: formData.image || selectedProduct.image
+        // Size quantities from form (convert to string or number as needed by API)
+        XS: formData.xs,
+        M: formData.m,
+        L: formData.l,
+        XL: formData.xl,
+        XXL: formData.xxl,
+        // Include image file if new image uploaded
+        image: formData.imageFile
       };
 
-      setProducts(prev => prev.map(p => p.id === selectedProduct.id ? updatedProduct : p));
+      const response = await adminProductService.updateProduct(parseInt(selectedProduct.id), productData);
+      
+      // Reload products after successful update
+      await loadProducts();
+      
       setShowEditModal(false);
       setSelectedProduct(null);
       resetForm();
-      showNotification('success', 'Product updated successfully!');
-    } catch (error) {
-      showNotification('error', 'Failed to update product. Please try again.');
+      showNotification('success', response.message || 'Product updated successfully!');
+    } catch (error: any) {
+      console.error('Failed to update product:', error);
+      showNotification('error', error.response?.data || 'Failed to update product. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -235,15 +283,17 @@ const ProductsPage = () => {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setProducts(prev => prev.filter(p => p.id !== selectedProduct.id));
+      const response = await adminProductService.deleteProduct(parseInt(selectedProduct.id));
+      
+      // Reload products after successful delete
+      await loadProducts();
+      
       setShowDeleteModal(false);
       setSelectedProduct(null);
-      showNotification('success', 'Product deleted successfully!');
-    } catch (error) {
-      showNotification('error', 'Failed to delete product. Please try again.');
+      showNotification('success', response.message || 'Product deleted successfully!');
+    } catch (error: any) {
+      console.error('Failed to delete product:', error);
+      showNotification('error', error.response?.data || 'Failed to delete product. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -251,14 +301,24 @@ const ProductsPage = () => {
 
   const openEditModal = (product: Product) => {
     setSelectedProduct(product);
+    // Find the corresponding API product to get size data
+    const apiProduct: any = apiProducts.find(p => p.id.toString() === product.id);
+    
     setFormData({
       name: product.name,
       description: product.description,
       category: product.category,
       price: product.price.toString(),
       stock: product.stock.toString(),
-      status: product.status,
-      image: product.image
+      isActive: product.status === 'active',
+      imageFile: null,
+      imagePreview: product.image,
+      // Parse size quantities or default to '0' - API returns lowercase field names
+      xs: apiProduct?.xs || '0',
+      m: apiProduct?.m || '0',
+      l: apiProduct?.l || '0',
+      xl: apiProduct?.xl || '0',
+      xxl: apiProduct?.xxl || '0'
     });
     setShowEditModal(true);
   };
@@ -536,13 +596,75 @@ const ProductsPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <select
-                    value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}
+                    value={formData.isActive ? 'active' : 'inactive'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'active' }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Size Quantities */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Size Quantities</label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">XS</label>
+                    <input
+                      type="number"
+                      value={formData.xs}
+                      onChange={(e) => setFormData(prev => ({ ...prev, xs: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">M</label>
+                    <input
+                      type="number"
+                      value={formData.m}
+                      onChange={(e) => setFormData(prev => ({ ...prev, m: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">L</label>
+                    <input
+                      type="number"
+                      value={formData.l}
+                      onChange={(e) => setFormData(prev => ({ ...prev, l: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">XL</label>
+                    <input
+                      type="number"
+                      value={formData.xl}
+                      onChange={(e) => setFormData(prev => ({ ...prev, xl: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">XXL</label>
+                    <input
+                      type="number"
+                      value={formData.xxl}
+                      onChange={(e) => setFormData(prev => ({ ...prev, xxl: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -555,19 +677,23 @@ const ProductsPage = () => {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        // Store the actual file for upload
+                        setFormData(prev => ({ ...prev, imageFile: file }));
+                        
+                        // Create preview URL
                         const reader = new FileReader();
                         reader.onload = (event) => {
-                          setFormData(prev => ({ ...prev, image: event.target?.result as string }));
+                          setFormData(prev => ({ ...prev, imagePreview: event.target?.result as string }));
                         };
                         reader.readAsDataURL(file);
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
                   />
-                  {formData.image && (
+                  {formData.imagePreview && (
                     <div className="mt-2">
                       <img
-                        src={formData.image}
+                        src={formData.imagePreview}
                         alt="Product preview"
                         className="w-20 h-20 object-cover rounded-lg border border-gray-300"
                       />
@@ -696,13 +822,75 @@ const ProductsPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <select
-                    value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}
+                    value={formData.isActive ? 'active' : 'inactive'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'active' }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Size Quantities */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Size Quantities</label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">XS</label>
+                    <input
+                      type="number"
+                      value={formData.xs}
+                      onChange={(e) => setFormData(prev => ({ ...prev, xs: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">M</label>
+                    <input
+                      type="number"
+                      value={formData.m}
+                      onChange={(e) => setFormData(prev => ({ ...prev, m: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">L</label>
+                    <input
+                      type="number"
+                      value={formData.l}
+                      onChange={(e) => setFormData(prev => ({ ...prev, l: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">XL</label>
+                    <input
+                      type="number"
+                      value={formData.xl}
+                      onChange={(e) => setFormData(prev => ({ ...prev, xl: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">XXL</label>
+                    <input
+                      type="number"
+                      value={formData.xxl}
+                      onChange={(e) => setFormData(prev => ({ ...prev, xxl: e.target.value }))}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-black"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -715,19 +903,23 @@ const ProductsPage = () => {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        // Store the actual file for upload
+                        setFormData(prev => ({ ...prev, imageFile: file }));
+                        
+                        // Create preview URL
                         const reader = new FileReader();
                         reader.onload = (event) => {
-                          setFormData(prev => ({ ...prev, image: event.target?.result as string }));
+                          setFormData(prev => ({ ...prev, imagePreview: event.target?.result as string }));
                         };
                         reader.readAsDataURL(file);
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
                   />
-                  {formData.image && (
+                  {formData.imagePreview && (
                     <div className="mt-2">
                       <img
-                        src={formData.image}
+                        src={formData.imagePreview}
                         alt="Product preview"
                         className="w-20 h-20 object-cover rounded-lg border border-gray-300"
                       />

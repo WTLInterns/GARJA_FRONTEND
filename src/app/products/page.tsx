@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { mockProducts } from '@/data/products';
+import { productService, publicProductService, getMockProducts } from '@/services/productService';
 import { Product } from '@/types/product';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -87,7 +87,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAuthRequired }) =>
               onChange={(e) => setSelectedSize(e.target.value)}
               className="ml-2 text-xs border border-gray-300 rounded px-2 py-1"
             >
-              {product.sizes.map(size => (
+              {product.sizes.map((size: string) => (
                 <option key={size} value={size}>{size}</option>
               ))}
             </select>
@@ -99,7 +99,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAuthRequired }) =>
               onChange={(e) => setSelectedColor(e.target.value)}
               className="ml-2 text-xs border border-gray-300 rounded px-2 py-1"
             >
-              {product.colors.map(color => (
+              {product.colors.map((color: string) => (
                 <option key={color} value={color}>{color}</option>
               ))}
             </select>
@@ -124,7 +124,9 @@ const ProductsPageContent: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [sortBy, setSortBy] = useState('newest');
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 5000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Auth modal state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -135,8 +137,43 @@ const ProductsPageContent: React.FC = () => {
     color: string;
   } | null>(null);
 
+  // Load products from API
   useEffect(() => {
-    let filtered = mockProducts;
+    const loadProducts = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        let fetchedProducts: Product[];
+        
+        // Use public product service (currently returns mock data)
+        // TODO: Implement public product endpoints in backend
+        if (category) {
+          // If category is specified, get products by category
+          fetchedProducts = await productService.getProductsByCategory(category);
+        } else {
+          // Otherwise get all products
+          fetchedProducts = await productService.getAllProducts();
+        }
+        
+        setProducts(fetchedProducts);
+      } catch (err) {
+        console.error('Error loading products:', err);
+        setError('Failed to load products. Please try again later.');
+        // Use mock data as fallback
+        const mockData = getMockProducts();
+        setProducts(mockData);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadProducts();
+  }, [category]);
+  
+  // Apply filters and sorting
+  useEffect(() => {
+    let filtered = [...products];
     
     if (category) {
       filtered = filtered.filter(product => product.category === category);
@@ -167,9 +204,8 @@ const ProductsPageContent: React.FC = () => {
         break;
     }
     
-    setProducts(mockProducts);
     setFilteredProducts(filtered);
-  }, [category, sortBy, priceRange]);
+  }, [products, category, sortBy, priceRange]);
 
   const getCategoryTitle = () => {
     if (!category) return 'All Products';
@@ -232,15 +268,40 @@ const ProductsPageContent: React.FC = () => {
           </div>
         </div>
 
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading products...</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Error state */}
+        {error && !isLoading && (
+          <div className="text-center py-12">
+            <div className="text-red-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading products</h3>
+            <p className="text-gray-600">{error}</p>
+          </div>
+        )}
+        
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} onAuthRequired={handleAuthRequired} />
-          ))}
-        </div>
+        {!isLoading && !error && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map(product => (
+              <ProductCard key={product.id} product={product} onAuthRequired={handleAuthRequired} />
+            ))}
+          </div>
+        )}
 
         {/* No products found */}
-        {filteredProducts.length === 0 && (
+        {!isLoading && !error && filteredProducts.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
