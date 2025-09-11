@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import '@/styles/globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
+import AuthCartWrapper from '@/components/AuthCartWrapper';
 
 export const metadata: Metadata = {
   title: 'Garja - Premium Mens Fashion',
@@ -18,7 +19,9 @@ export default function RootLayout({
       <body className="min-h-screen bg-white">
         <AuthProvider>
           <CartProvider>
-            {children}
+            <AuthCartWrapper>
+              {children}
+            </AuthCartWrapper>
           </CartProvider>
         </AuthProvider>
       </body>

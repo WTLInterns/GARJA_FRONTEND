@@ -49,6 +49,11 @@ const CartPage: React.FC = () => {
     }
   };
 
+  const handleAuthSuccess = () => {
+    // User successfully logged in, close modal and stay on cart page
+    setShowAuthModal(false);
+  };
+
   const shippingCost = state.totalAmount > 1000 ? 0 : 99;
   const tax = Math.round(state.totalAmount * 0.18); // 18% GST
   const finalTotal = state.totalAmount + shippingCost + tax;
@@ -245,6 +250,7 @@ const CartPage: React.FC = () => {
         isOpen={showAuthModal}
         onClose={handleAuthModalClose}
         initialMode={authModalMode}
+        onAuthSuccess={handleAuthSuccess}
       />
     </>
   );

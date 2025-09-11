@@ -261,6 +261,7 @@ const OrderSuccessContent: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </div>
       <Footer />
     </>

@@ -74,11 +74,22 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
 
   return (
     <>
-      {/* Backdrop with blur effect */}
+      {/* Backdrop with blur effect and background image */}
       <div
-        className="fixed inset-0 z-40 bg-black bg-opacity-30 backdrop-blur-sm transition-all duration-300"
+        className="fixed inset-0 z-40 bg-black bg-opacity-40 backdrop-blur-sm transition-all duration-300"
         onClick={closeCart}
-      />
+      >
+        {/* Background Image with Overlay */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+          style={{
+            backgroundImage: `url('/images/hero4.jpg')`,
+          }}
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60"
+        />
+      </div>
 
       {/* Amazon-style Sidebar */}
       <div
@@ -112,7 +123,35 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
 
           {/* Cart Items with Amazon-style layout */}
           <div className="flex-1 overflow-y-auto">
-            {state.items.length === 0 ? (
+            {!user ? (
+              <div className="text-center py-12 px-6">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Please sign in to view your cart</h3>
+                <p className="text-gray-600 mb-6">Sign in to see the items you added previously or start building your cart.</p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      if (onAuthRequired) {
+                        onAuthRequired();
+                      }
+                    }}
+                    className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={closeCart}
+                    className="text-gray-600 hover:text-gray-900 font-medium underline text-sm"
+                  >
+                    Continue Shopping
+                  </button>
+                </div>
+              </div>
+            ) : state.items.length === 0 ? (
               <div className="text-center py-12 px-6">
                 <div className="text-gray-400 mb-4">
                   <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">

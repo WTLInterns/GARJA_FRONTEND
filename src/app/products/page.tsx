@@ -9,8 +9,14 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AuthModal from '@/components/AuthModal';
 
-const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
+interface ProductCardProps {
+  product: Product;
+  onAuthRequired?: (product: Product, size: string, color: string) => void;
+}
+
+const ProductCard: React.FC<ProductCardProps> = ({ product, onAuthRequired }) => {
   const { addItem } = useCart();
   const { user } = useAuth();
   const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
@@ -18,8 +24,12 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
 
   const handleAddToCart = () => {
     if (!user) {
-      // Redirect to login - we'll handle this in the parent component
-      window.location.href = '/?login=true&redirect=' + encodeURIComponent(window.location.pathname);
+      if (onAuthRequired) {
+        onAuthRequired(product, selectedSize, selectedColor);
+      } else {
+        // Fallback to redirect if no auth handler provided
+        window.location.href = '/?login=true&redirect=' + encodeURIComponent(window.location.pathname);
+      }
       return;
     }
     
@@ -110,10 +120,20 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
 const ProductsPageContent: React.FC = () => {
   const searchParams = useSearchParams();
   const category = searchParams.get('category');
+  const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [sortBy, setSortBy] = useState('newest');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 5000 });
+  
+  // Auth modal state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
+  const [pendingProduct, setPendingProduct] = useState<{
+    product: Product;
+    size: string;
+    color: string;
+  } | null>(null);
 
   useEffect(() => {
     let filtered = mockProducts;
@@ -156,6 +176,27 @@ const ProductsPageContent: React.FC = () => {
     return category.charAt(0).toUpperCase() + category.slice(1).replace('-', ' ');
   };
 
+  // Auth modal handlers
+  const handleAuthRequired = (product: Product, size: string, color: string) => {
+    setPendingProduct({ product, size, color });
+    setAuthModalMode('login');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleAuthModalClose = () => {
+    setIsAuthModalOpen(false);
+    setPendingProduct(null);
+  };
+
+  const handleAuthSuccess = () => {
+    // This will be called when login/signup is successful
+    if (pendingProduct) {
+      addItem(pendingProduct.product, 1, pendingProduct.size, pendingProduct.color);
+      setPendingProduct(null);
+    }
+    setIsAuthModalOpen(false);
+  };
+
   return (
     <>
       <Header />
@@ -194,7 +235,7 @@ const ProductsPageContent: React.FC = () => {
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} onAuthRequired={handleAuthRequired} />
           ))}
         </div>
 
@@ -213,6 +254,14 @@ const ProductsPageContent: React.FC = () => {
         </div>
       </div>
       <Footer />
+      
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={handleAuthModalClose}
+        initialMode={authModalMode}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </>
   );
 };

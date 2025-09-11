@@ -17,7 +17,7 @@ declare global {
 
 const CheckoutPage: React.FC = () => {
   const { state, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
@@ -42,29 +42,32 @@ const CheckoutPage: React.FC = () => {
   useEffect(() => {
     setIsClient(true);
 
-    if (!user) {
+    // Don't show auth modal while auth is loading
+    if (!isAuthLoading && !user) {
       setAuthModalMode('login');
       setShowAuthModal(true);
       return;
     }
 
-    if (state.items.length === 0) {
+    if (user && state.items.length === 0) {
       router.push('/cart');
       return;
     }
 
-    // Load Razorpay script
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
+    // Load Razorpay script only when user is authenticated
+    if (user) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
 
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [user, state.items.length, router]);
+      return () => {
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
+        }
+      };
+    }
+  }, [user, isAuthLoading, state.items.length, router]);
 
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
@@ -74,8 +77,13 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  // Show loading state during hydration
-  if (!isClient) {
+  const handleAuthSuccess = () => {
+    // User successfully logged in, close modal and stay on checkout page
+    setShowAuthModal(false);
+  };
+
+  // Show loading state during hydration or auth loading
+  if (!isClient || isAuthLoading) {
     return (
       <>
         <Header />
@@ -90,7 +98,7 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  // Early return for loading/auth states
+  // Early return for auth check or empty cart
   if (!user || state.items.length === 0) {
     return (
       <>
@@ -108,6 +116,7 @@ const CheckoutPage: React.FC = () => {
           isOpen={showAuthModal}
           onClose={handleAuthModalClose}
           initialMode={authModalMode}
+          onAuthSuccess={handleAuthSuccess}
         />
       </>
     );
@@ -505,6 +514,7 @@ const CheckoutPage: React.FC = () => {
         isOpen={showAuthModal}
         onClose={handleAuthModalClose}
         initialMode={authModalMode}
+        onAuthSuccess={handleAuthSuccess}
       />
     </>
   );

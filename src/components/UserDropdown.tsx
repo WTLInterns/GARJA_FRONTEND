@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import ConfirmationModal from './ConfirmationModal';
 
 const UserDropdown: React.FC = () => {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -39,9 +44,19 @@ const UserDropdown: React.FC = () => {
     };
   }, [isOpen]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogoutClick = () => {
     setIsOpen(false);
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = () => {
+    logout();
+    setShowLogoutConfirm(false);
+    router.push('/');
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   const toggleDropdown = () => {
@@ -110,8 +125,21 @@ const UserDropdown: React.FC = () => {
 
           {/* Menu Items */}
           <div className="py-1">
+            {/* My Orders */}
+            <Link
+              href="/orders"
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200 flex items-center space-x-3"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              <span>My Orders</span>
+            </Link>
+
             {/* Account Settings */}
-            <button
+            <Link
+              href="/account-settings"
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200 flex items-center space-x-3"
               onClick={() => setIsOpen(false)}
             >
@@ -119,7 +147,7 @@ const UserDropdown: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               <span>Account Settings</span>
-            </button>
+            </Link>
 
             
 
@@ -130,7 +158,7 @@ const UserDropdown: React.FC = () => {
 
             {/* Logout */}
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-200 flex items-center space-x-3"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,6 +169,17 @@ const UserDropdown: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showLogoutConfirm}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
+        title="Sign Out"
+        message="Are you sure you want to sign out? You'll need to sign in again to access your account."
+        confirmText="Sign Out"
+        cancelText="Cancel"
+      />
     </div>
   );
 };
