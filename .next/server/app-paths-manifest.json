@@ -4,8 +4,5 @@
   "/products/page": "app/products/page.js",
   "/product/[id]/page": "app/product/[id]/page.js",
   "/checkout/page": "app/checkout/page.js",
-  "/order-success/page": "app/order-success/page.js",
-  "/cart/page": "app/cart/page.js",
-  "/admin/orders/page": "app/admin/orders/page.js",
-  "/admin/customers/page": "app/admin/customers/page.js"
+  "/cart/page": "app/cart/page.js"
 }

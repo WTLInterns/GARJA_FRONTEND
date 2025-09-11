@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ShippingAddress } from '@/types/product';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
+import SuccessNotification from '@/components/SuccessNotification';
 
 declare global {
   interface Window {
@@ -22,6 +24,8 @@ const CheckoutPage: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const [isClient, setIsClient] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // All hooks must be declared before any early returns
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
@@ -197,8 +201,18 @@ const CheckoutPage: React.FC = () => {
         handler: function (response: any) {
           // Payment successful
           console.log('Payment successful:', response);
+          
+          // Show success message toast
+          setSuccessMessage('Order placed successfully! Thank you for your purchase.');
+          setShowSuccess(true);
+
+          // Clear cart
           clearCart();
-          router.push(`/order-success?payment_id=${response.razorpay_payment_id}&order_id=${response.razorpay_order_id}`);
+
+          // Redirect to home page after short delay
+          setTimeout(() => {
+            router.push('/');
+          }, 1500);
         },
         prefill: {
           name: shippingAddress.fullName,
@@ -240,8 +254,17 @@ const CheckoutPage: React.FC = () => {
       // Simulate order creation for COD
       await new Promise(resolve => setTimeout(resolve, 2000));
 
+      // Show success message toast
+      setSuccessMessage('Order placed successfully! Your order will be delivered soon.');
+      setShowSuccess(true);
+
+      // Clear cart
       clearCart();
-      router.push('/order-success?payment_method=cod');
+
+      // Redirect to home page after short delay
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
     } catch (error) {
       console.error('Error placing COD order:', error);
       alert('Error placing order. Please try again.');
@@ -436,15 +459,19 @@ const CheckoutPage: React.FC = () => {
                   <div className="space-y-4 mb-6">
                     {state.items.map((item) => (
                       <div key={item.id} className="flex items-center space-x-3">
-                        <img
-                          src={item.product.images[0]}
-                          alt={item.product.name}
-                          className="w-12 h-12 object-cover rounded"
-                        />
+                        <Link href={`/product/${item.product.id}`} className="flex-shrink-0">
+                          <img
+                            src={item.product.images[0]}
+                            alt={item.product.name}
+                            className="w-12 h-12 object-cover rounded hover:opacity-90 transition"
+                          />
+                        </Link>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {item.product.name}
-                          </p>
+                          <Link href={`/product/${item.product.id}`} className="block">
+                            <p className="text-sm font-medium text-gray-900 truncate hover:text-gray-700">
+                              {item.product.name}
+                            </p>
+                          </Link>
                           <p className="text-xs text-gray-500">
                             {item.selectedSize} • {item.selectedColor} • Qty: {item.quantity}
                           </p>
@@ -508,6 +535,14 @@ const CheckoutPage: React.FC = () => {
         </div>
       </div>
       <Footer />
+
+      {/* Success Notification */}
+      <SuccessNotification
+        message={successMessage}
+        isVisible={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        duration={1500}
+      />
 
       {/* Authentication Modal */}
       <AuthModal
