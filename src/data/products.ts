@@ -2,28 +2,7 @@ import { Product } from '@/types/product';
 
 export const mockProducts: Product[] = [
   // T-Shirts
-  {
-    id: 'tshirt-001',
-    name: 'Premium Cotton T-Shirt',
-    description: 'Ultra-soft premium cotton t-shirt with a comfortable fit. Perfect for everyday wear with superior quality fabric that maintains its shape and color after multiple washes.',
-    price: 899,
-    originalPrice: 1299,
-    category: 't-shirts',
-    images: [
-      '/images/tshirt1.jpg',
-      '/images/tshirt.jpg',
-      '/images/oversizetshirt.jpg'
-    ],
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-    colors: ['Black', 'White', 'Navy', 'Gray'],
-    inStock: true,
-    stockQuantity: 50,
-    rating: 4.8,
-    reviewCount: 124,
-    tags: ['premium', 'cotton', 'comfortable', 'bestseller'],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T00:00:00Z'
-  },
+
   {
     id: 'tshirt-002',
     name: 'Graphic Print T-Shirt',

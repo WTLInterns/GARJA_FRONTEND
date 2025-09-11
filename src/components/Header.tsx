@@ -308,10 +308,12 @@ const Header = () => {
       </div>
 
       {/* Authentication Modal */}
+      {/* Pass noOverlay to AuthModal to show modal without dark overlay for a more professional look */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={handleAuthModalClose}
         initialMode={authModalMode}
+        
       />
 
       {/* Cart Sidebar */}
