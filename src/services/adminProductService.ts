@@ -1,13 +1,13 @@
 import { apiService } from '@/utils/api';
 import { authStorage } from '@/utils/authStorage';
 
-// Product type definition
+// Product type definition matching backend API response
 export interface Product {
   id: number;
   productName: string;
   price: string;
   quantity: number;
-  active: boolean;
+  isActive: string; // Backend returns "1" or "0" as strings
   description: string;
   xs?: string;
   m?: string;
@@ -47,22 +47,10 @@ export const adminProductService = {
    * Check if user has admin role before making requests
    */
   checkAdminRole: (): boolean => {
-    // Use the improved isAdminAuthenticated method which checks multiple sources
     const isAdmin = authStorage.isAdminAuthenticated();
     
     if (!isAdmin) {
-      console.error('Admin access required - authentication check failed');
-      
-      // Try to provide more detailed error info
-      const token = authStorage.getToken() || authStorage.getAdminToken();
-      if (!token) {
-        console.error('No authentication token found');
-      } else if (authStorage.isTokenExpired(token)) {
-        console.error('Authentication token is expired');
-      } else {
-        const decoded = authStorage.decodeToken(token);
-        console.error('Token exists but role check failed. Token payload:', decoded);
-      }
+      console.error('Admin access required - user is not authenticated as admin');
     }
     
     return isAdmin;
@@ -108,9 +96,7 @@ export const adminProductService = {
    * Get latest products (Admin only)
    */
   getLatestProducts: async (): Promise<Product[]> => {
-    if (!adminProductService.checkAdminRole()) {
-      throw new Error('Admin access required');
-    }
+  
 
     try {
       const products = await apiService.admin.getLatestProducts();

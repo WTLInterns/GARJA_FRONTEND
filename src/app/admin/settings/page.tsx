@@ -7,11 +7,7 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('general');
 
   const tabs = [
-    { id: 'general', name: 'General', icon: '⚙️' },
-    { id: 'store', name: 'Store Settings', icon: '🏪' },
-    { id: 'payment', name: 'Payment', icon: '💳' },
-    { id: 'shipping', name: 'Shipping', icon: '🚚' },
-    { id: 'notifications', name: 'Notifications', icon: '🔔' }
+    { id: 'general', name: 'General', icon: '⚙️' }
   ];
 
   return (
@@ -100,7 +96,7 @@ const SettingsPage = () => {
               </div>
             )}
 
-            {activeTab === 'store' && (
+            {/* {activeTab === 'store' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900">Store Settings</h3>
                 
@@ -269,7 +265,7 @@ const SettingsPage = () => {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Save Button */}
             <div className="pt-6 border-t border-gray-200">

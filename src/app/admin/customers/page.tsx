@@ -1,148 +1,106 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { adminOrderService, UserStats } from '@/services/adminOrderService';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
-interface Customer {
+// Display customer interface
+interface DisplayCustomer {
   id: string;
   name: string;
+  email: string;
   phone: string;
   totalOrders: number;
   totalSpent: number;
   status: 'active' | 'inactive';
-  joinDate: string;
-  lastOrder: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-}
-
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  totalOrders: number;
-  totalSpent: number;
-  lastOrder: string;
-  status: 'active' | 'inactive';
-  joinDate: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
+  role: string;
+  rawUser: UserStats; // Keep original for reference
 }
 
 const CustomersPage = () => {
+  const router = useRouter();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<DisplayCustomer | null>(null);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [customers, setCustomers] = useState<DisplayCustomer[]>([]);
 
-  // Mock customers data
-  const [customers] = useState<Customer[]>([
-    {
-      id: 'CUST-001',
-      name: 'John Doe',
-      phone: '+91 98765 43210',
-      totalOrders: 12,
-      totalSpent: 15678,
-      lastOrder: '2024-01-15',
-      status: 'active',
-      joinDate: '2023-06-15',
-      address: {
-        street: '123 Main Street',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        zipCode: '400001',
-        country: 'India'
-      }
-    },
-    {
-      id: 'CUST-002',
-      name: 'Jane Smith',
-      phone: '+91 87654 32109',
-      totalOrders: 8,
-      totalSpent: 9876,
-      lastOrder: '2024-01-10',
-      status: 'active',
-      joinDate: '2023-08-22',
-      address: {
-        street: '456 Oak Avenue',
-        city: 'Delhi',
-        state: 'Delhi',
-        zipCode: '110001',
-        country: 'India'
-      }
-    },
-    {
-      id: 'CUST-003',
-      name: 'Mike Johnson',
-      phone: '+91 76543 21098',
-      totalOrders: 5,
-      totalSpent: 6543,
-      lastOrder: '2023-12-28',
-      status: 'inactive',
-      joinDate: '2023-09-10',
-      address: {
-        street: '789 Pine Road',
-        city: 'Bangalore',
-        state: 'Karnataka',
-        zipCode: '560001',
-        country: 'India'
-      }
-    },
-    {
-      id: 'CUST-004',
-      name: 'Sarah Wilson',
-      phone: '+91 65432 10987',
-      totalOrders: 15,
-      totalSpent: 23456,
-      lastOrder: '2024-01-12',
-      status: 'active',
-      joinDate: '2023-04-05',
-      address: {
-        street: '321 Elm Street',
-        city: 'Chennai',
-        state: 'Tamil Nadu',
-        zipCode: '600001',
-        country: 'India'
-      }
-    },
-    {
-      id: 'CUST-005',
-      name: 'David Brown',
-      phone: '+91 54321 09876',
-      totalOrders: 3,
-      totalSpent: 4321,
-      lastOrder: '2023-11-15',
-      status: 'inactive',
-      joinDate: '2023-10-20',
-      address: {
-        street: '654 Maple Lane',
-        city: 'Pune',
-        state: 'Maharashtra',
-        zipCode: '411001',
-        country: 'India'
-      }
+  // Load customers from API
+  useEffect(() => {
+    if (isAuthLoading) {
+      return;
     }
-  ]);
+    
+    if (!isAuthenticated) {
+      console.log('Not authenticated, redirecting to admin login');
+      router.push('/admin');
+      return;
+    }
+
+    loadCustomers();
+  }, [isAuthenticated, isAuthLoading, router]);
+
+  const loadCustomers = async () => {
+    setIsLoadingCustomers(true);
+    try {
+      const fetchedStats = await adminOrderService.getUserStats();
+      const transformedCustomers = fetchedStats.map(transformUserStats);
+      setCustomers(transformedCustomers);
+    } catch (error: any) {
+      console.error('Failed to load customers:', error);
+      
+      // Handle specific error types
+      if (error.message === 'Admin access required') {
+        showNotification('error', 'Admin access required. Please login as admin.');
+        router.push('/admin');
+      } else if (error.response?.status === 403) {
+        showNotification('error', 'You do not have permission to view customer data');
+        router.push('/admin');
+      } else if (error.response?.status === 401) {
+        showNotification('error', 'Your session has expired. Please login again.');
+        router.push('/admin');
+      } else {
+        showNotification('error', error.message || 'Failed to load customers. Please try again.');
+      }
+    } finally {
+      setIsLoadingCustomers(false);
+    }
+  };
+  
+  // Transform API user stats to display customer format
+  const transformUserStats = (userStats: UserStats): DisplayCustomer => ({
+    id: `CUST-${userStats.id.toString().padStart(3, '0')}`,
+    name: `${userStats.firstName || ''} ${userStats.lastName || ''}`.trim(),
+    email: userStats.email || 'N/A',
+    phone: userStats.phoneNumber || 'N/A',
+    totalOrders: userStats.totalOrders || 0,
+    totalSpent: userStats.totalSpent || 0,
+    status: (userStats.totalOrders || 0) > 0 ? 'active' : 'inactive',
+    role: userStats.role || 'USER',
+    rawUser: userStats
+  });
 
   const statuses = ['all', 'active', 'inactive'];
 
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.phone.includes(searchTerm) ||
                          customer.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+  
+  // Helper functions
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const getStatusColor = (status: string) => {
     return status === 'active' 
@@ -151,13 +109,14 @@ const CustomersPage = () => {
   };
 
   const getCustomerTier = (totalSpent: number) => {
-    if (totalSpent >= 20000) return { tier: 'VIP', color: 'text-purple-600' };
-    if (totalSpent >= 10000) return { tier: 'Gold', color: 'text-yellow-600' };
-    if (totalSpent >= 5000) return { tier: 'Silver', color: 'text-gray-600' };
+    const amount = totalSpent || 0;
+    if (amount >= 20000) return { tier: 'VIP', color: 'text-purple-600' };
+    if (amount >= 10000) return { tier: 'Gold', color: 'text-yellow-600' };
+    if (amount >= 5000) return { tier: 'Silver', color: 'text-gray-600' };
     return { tier: 'Bronze', color: 'text-orange-600' };
   };
 
-  const openDetailsModal = (customer: Customer) => {
+  const openDetailsModal = (customer: DisplayCustomer) => {
     setSelectedCustomer(customer);
     setShowDetailsModal(true);
   };
@@ -220,7 +179,7 @@ const CustomersPage = () => {
                 <div className="ml-5">
                   <p className="text-sm font-medium text-gray-500">VIP Customers</p>
                   <p className="text-2xl font-semibold text-gray-900">
-                    {customers.filter(c => c.totalSpent >= 20000).length}
+                    {customers.filter(c => (c.totalSpent || 0) >= 20000).length}
                   </p>
                 </div>
               </div>
@@ -238,7 +197,7 @@ const CustomersPage = () => {
                 <div className="ml-5">
                   <p className="text-sm font-medium text-gray-500">Total Revenue</p>
                   <p className="text-2xl font-semibold text-gray-900">
-                    ₹{customers.reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString()}
+                    ₹{customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -286,83 +245,102 @@ const CustomersPage = () => {
 
         {/* Customers Table */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Orders
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Spent
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tier
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCustomers.map((customer) => {
-                  const tier = getCustomerTier(customer.totalSpent);
-                  return (
-                    <tr key={customer.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                          <div className="text-sm text-gray-500">{customer.id}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{customer.phone}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {customer.totalOrders}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ₹{customer.totalSpent.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm font-medium ${tier.color}`}>
-                          {tier.tier}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(customer.status)}`}>
-                          {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => openDetailsModal(customer)}
-                            className="text-black hover:text-gray-700 transition-colors duration-200"
-                            title="View Details"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {isLoadingCustomers ? (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+              <p className="mt-2 text-gray-600">Loading customers...</p>
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="p-8 text-center">
+              <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+              <p className="text-gray-500">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'Try adjusting your search or filter criteria.'
+                  : 'No customer data available at the moment.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Orders
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total Spent
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tier
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredCustomers.map((customer) => {
+                    const tier = getCustomerTier(customer.totalSpent);
+                    return (
+                      <tr key={customer.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                            <div className="text-sm text-gray-500">{customer.email}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{customer.phone}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {customer.totalOrders}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          ₹{(customer.totalSpent || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`text-sm font-medium ${tier.color}`}>
+                            {tier.tier}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(customer.status)}`}>
+                            {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => openDetailsModal(customer)}
+                              className="text-black hover:text-gray-700 transition-colors duration-200"
+                              title="View Details"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Results Summary */}
@@ -406,8 +384,16 @@ const CustomersPage = () => {
                       <p className="text-gray-900">{selectedCustomer.name}</p>
                     </div>
                     <div>
+                      <span className="text-sm font-medium text-gray-500">Email:</span>
+                      <p className="text-gray-900">{selectedCustomer.email}</p>
+                    </div>
+                    <div>
                       <span className="text-sm font-medium text-gray-500">Phone:</span>
                       <p className="text-gray-900">{selectedCustomer.phone}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Role:</span>
+                      <p className="text-gray-900 capitalize">{selectedCustomer.role}</p>
                     </div>
                     <div>
                       <span className="text-sm font-medium text-gray-500">Status:</span>
@@ -433,29 +419,73 @@ const CustomersPage = () => {
                     </div>
                     <div>
                       <span className="text-sm font-medium text-gray-500">Total Spent:</span>
-                      <p className="text-gray-900 font-semibold">₹{selectedCustomer.totalSpent.toLocaleString()}</p>
+                      <p className="text-gray-900 font-semibold">₹{(selectedCustomer.totalSpent || 0).toLocaleString()}</p>
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-500">Join Date:</span>
-                      <p className="text-gray-900">{new Date(selectedCustomer.joinDate).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Last Order:</span>
-                      <p className="text-gray-900">{new Date(selectedCustomer.lastOrder).toLocaleDateString()}</p>
+                      <span className="text-sm font-medium text-gray-500">Average Order Value:</span>
+                      <p className="text-gray-900 font-semibold">
+                        ₹{(selectedCustomer.totalOrders || 0) > 0 
+                          ? Math.round((selectedCustomer.totalSpent || 0) / (selectedCustomer.totalOrders || 1)).toLocaleString() 
+                          : 0}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Address Information */}
+              {/* Additional Information */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Address</h4>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-900">{selectedCustomer.address.street}</p>
-                  <p className="text-gray-900">{selectedCustomer.address.city}, {selectedCustomer.address.state}</p>
-                  <p className="text-gray-900">{selectedCustomer.address.zipCode}</p>
-                  <p className="text-gray-900">{selectedCustomer.address.country}</p>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Additional Details</h4>
+                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium text-gray-500">User ID:</span>
+                    <span className="text-gray-900">{selectedCustomer.rawUser.id}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium text-gray-500">Account Status:</span>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedCustomer.status)}`}>
+                      {selectedCustomer.status.charAt(0).toUpperCase() + selectedCustomer.status.slice(1)}
+                    </span>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${
+          notification.type === 'success' 
+            ? 'bg-green-100 text-green-800 border border-green-200' 
+            : 'bg-red-100 text-red-800 border border-red-200'
+        }`}>
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              {notification.type === 'success' ? (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+            <div className="ml-3">
+              <p className="font-medium">{notification.message}</p>
+            </div>
+            <div className="ml-auto pl-3">
+              <div className="-mx-1.5 -my-1.5">
+                <button
+                  onClick={() => setNotification(null)}
+                  className="inline-flex rounded-md p-1.5 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>

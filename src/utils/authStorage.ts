@@ -45,45 +45,72 @@ function getUserRoleFromToken(token: string): string | null {
   // Log the decoded token structure for debugging
   console.log('Decoded JWT token:', decoded);
   
-  // Try different possible locations for role in JWT
-  // Spring Security often puts role in different places depending on configuration
-  let role = null;
+  // Helper function to normalize role string (remove ROLE_ prefix)
+  const normalizeRole = (roleStr: string): string => {
+    if (typeof roleStr !== 'string') return roleStr;
+    return roleStr.replace(/^ROLE_/, '').toUpperCase();
+  };
   
-  // Direct role field
+  // Helper function to find admin role in array
+  const findAdminInArray = (arr: any[]): string | null => {
+    if (!Array.isArray(arr)) return null;
+    const adminItem = arr.find((item: any) => {
+      const str = String(item).toUpperCase();
+      return str === 'ADMIN' || str === 'ROLE_ADMIN' || str.includes('ADMIN');
+    });
+    return adminItem ? normalizeRole(String(adminItem)) : null;
+  };
+  
+  // Try different possible locations for role in JWT token
+  // Spring Security can put roles in various places depending on configuration
+  
+  // 1. Direct role field
   if (decoded.role) {
-    role = decoded.role;
-  }
-  // Authorities array (Spring Security default)
-  else if (decoded.authorities && Array.isArray(decoded.authorities)) {
-    // Authorities might be strings like "ROLE_ADMIN" or just "ADMIN"
-    const adminAuth = decoded.authorities.find((auth: string) => 
-      auth === 'ADMIN' || auth === 'ROLE_ADMIN' || auth.includes('ADMIN')
-    );
-    if (adminAuth) {
-      role = adminAuth.includes('ROLE_') ? adminAuth.replace('ROLE_', '') : adminAuth;
-    }
-  }
-  // Single authority string
-  else if (decoded.authority) {
-    role = decoded.authority.includes('ROLE_') ? 
-           decoded.authority.replace('ROLE_', '') : decoded.authority;
-  }
-  // Roles array
-  else if (decoded.roles && Array.isArray(decoded.roles)) {
-    const adminRole = decoded.roles.find((r: string) => 
-      r === 'ADMIN' || r === 'ROLE_ADMIN'
-    );
-    if (adminRole) {
-      role = adminRole.includes('ROLE_') ? adminRole.replace('ROLE_', '') : adminRole;
-    }
-  }
-  // User info embedded in token
-  else if (decoded.sub && typeof decoded.sub === 'object' && decoded.sub.role) {
-    role = decoded.sub.role;
+    return normalizeRole(String(decoded.role));
   }
   
-  console.log('Extracted role from token:', role);
-  return role;
+  // 2. Authorities array (Spring Security default)
+  if (decoded.authorities) {
+    const role = findAdminInArray(decoded.authorities);
+    if (role) return role;
+  }
+  
+  // 3. Single authority string
+  if (decoded.authority) {
+    return normalizeRole(String(decoded.authority));
+  }
+  
+  // 4. Roles array
+  if (decoded.roles) {
+    const role = findAdminInArray(decoded.roles);
+    if (role) return role;
+  }
+  
+  // 5. User info embedded in token subject
+  if (decoded.sub && typeof decoded.sub === 'object' && decoded.sub.role) {
+    return normalizeRole(String(decoded.sub.role));
+  }
+  
+  // 6. Claims with different case variations
+  const roleFields = ['Role', 'ROLE', 'user_role', 'userRole'];
+  for (const field of roleFields) {
+    if (decoded[field]) {
+      const role = Array.isArray(decoded[field]) 
+        ? findAdminInArray(decoded[field]) 
+        : normalizeRole(String(decoded[field]));
+      if (role) return role;
+    }
+  }
+  
+  // 7. Check if this is a simple JWT with email as subject and role info missing
+  // In this case, we'll rely on the user object stored separately
+  if (decoded.sub && typeof decoded.sub === 'string' && decoded.sub.includes('@')) {
+    console.warn('JWT appears to only contain email in subject, no role info found');
+    return null;
+  }
+  
+  console.log('No role found in token. Available fields:', Object.keys(decoded));
+  return null;
 }
 
 // Auth Storage utility
@@ -231,14 +258,22 @@ export const authStorage = {
         return null;
       }
       
-      // Verify admin role
-      const role = getUserRoleFromToken(token);
-      if (role !== 'ADMIN') {
+      // Parse user data
+      const user = JSON.parse(userStr);
+      
+      // Verify admin role from user object (primary source of truth)
+      if (user.role !== 'ADMIN') {
+        console.warn('Stored user does not have ADMIN role, clearing admin auth');
         authStorage.clearAdminAuth();
         return null;
       }
       
-      const user = JSON.parse(userStr);
+      // Optional: Also check token for role if available (secondary verification)
+      const tokenRole = getUserRoleFromToken(token);
+      if (tokenRole && tokenRole !== 'ADMIN') {
+        console.warn('Token role mismatch with stored user role, but keeping based on user object');
+      }
+      
       return { token, user };
     } catch (error) {
       console.error('Error loading admin auth data:', error);

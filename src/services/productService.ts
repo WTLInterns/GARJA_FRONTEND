@@ -115,10 +115,15 @@ export const productService = {
    * Create public endpoints like /api/products for unauthenticated users.
    */
   getAllProducts: async (): Promise<Product[]> => {
-    // In production, this should be a public endpoint
-    // For now, return mock data if not authenticated
-    console.warn('Using mock data. Implement public product endpoints in backend.');
-    return getMockProducts();
+    try {
+      // Note: Backend only has admin endpoints currently
+      // Using mock data until public endpoints are implemented
+      console.warn('Using mock data. Backend needs public product endpoints.');
+      return getMockProducts();
+    } catch (error) {
+      console.warn('Error loading products, using fallback mock data:', error);
+      return getMockProducts();
+    }
   },
 
   /**
@@ -126,11 +131,14 @@ export const productService = {
    * WARNING: This should NOT use admin endpoints in production.
    */
   getProductsByCategory: async (category: string): Promise<Product[]> => {
-    // In production, this should be a public endpoint
-    // For now, filter mock data by category
-    console.warn('Using mock data. Implement public product endpoints in backend.');
-    const allProducts = getMockProducts();
-    return allProducts.filter(p => p.category === category);
+    try {
+      // Fetch all products and filter by category
+      const allProducts = await productService.getAllProducts();
+      return allProducts.filter(p => p.category === category);
+    } catch (error) {
+      console.error('Failed to fetch products by category:', error);
+      return [];
+    }
   },
 
   /**

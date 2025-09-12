@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getProductById, getRelatedProducts } from '@/data/products';
+import { productService } from '@/services/productService';
 import { Product } from '@/types/product';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,17 +25,35 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const productId = params.id as string;
-    const foundProduct = getProductById(productId);
+    const loadProduct = async () => {
+      setLoading(true);
+      const productId = params.id as string;
+      
+      try {
+        // Fetch the specific product from backend
+        const foundProduct = await productService.getProductById(productId);
+        
+        if (foundProduct) {
+          setProduct(foundProduct);
+          setSelectedSize(foundProduct.sizes[0] || 'M');
+          setSelectedColor(foundProduct.colors[0] || 'Black');
+          
+          // Fetch related products by category
+          const allProducts = await productService.getAllProducts();
+          const relatedProducts = allProducts
+            .filter(p => p.id !== productId && p.category === foundProduct.category)
+            .slice(0, 4);
+          setRelatedProducts(relatedProducts);
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    if (foundProduct) {
-      setProduct(foundProduct);
-      setSelectedSize(foundProduct.sizes[0]);
-      setSelectedColor(foundProduct.colors[0]);
-      setRelatedProducts(getRelatedProducts(productId));
-    }
-    
-    setLoading(false);
+    loadProduct();
   }, [params.id]);
 
   const handleAddToCart = () => {

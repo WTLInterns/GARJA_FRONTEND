@@ -45,7 +45,11 @@ const api: AxiosInstance = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('garja_token');
+    // Check admin token first, then regular token
+    const adminToken = localStorage.getItem('garja_admin_token');
+    const regularToken = localStorage.getItem('garja_token');
+    const token = adminToken || regularToken;
+    
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -68,9 +72,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      // Clear auth data
+      // Clear all auth data (both regular and admin)
       localStorage.removeItem('garja_token');
       localStorage.removeItem('garja_user');
+      localStorage.removeItem('garja_admin_token');
+      localStorage.removeItem('garja_admin');
       
       // Redirect to login if not already there
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
@@ -81,6 +87,13 @@ api.interceptors.response.use(
 
     // Handle 403 Forbidden
     if (error.response?.status === 403) {
+      // Check if this is an admin request and clear admin session
+      const isAdminRequest = originalRequest?.url?.includes('/admin/');
+      if (isAdminRequest) {
+        localStorage.removeItem('garja_admin_token');
+        localStorage.removeItem('garja_admin');
+      }
+      
       // Dispatch custom event for insufficient permissions
       window.dispatchEvent(new CustomEvent('auth:forbidden', { 
         detail: { 
@@ -139,19 +152,19 @@ export const apiService = {
     },
 
     getAllProducts: async () => {
-      const response = await api.get('/admin/getAllProducts');
+      const response = await api.get('/public/getAllProducts');
       return response.data;
     },
 
     getProductsByCategory: async (category: string) => {
-      const response = await api.get('/admin/getProductByCategory', {
+      const response = await api.get('/public/getProductByCategory', {
         params: { category },
       });
       return response.data;
     },
 
     getLatestProducts: async () => {
-      const response = await api.get('/admin/getLatestProducts');
+      const response = await api.get('/public/getLatestProducts');
       return response.data;
     },
   },
