@@ -1,8 +1,8 @@
 import { AuthUser } from './api';
 
 // Storage keys
-const TOKEN_KEY = 'garja_token';
-const USER_KEY = 'garja_user';
+const TOKEN_KEY = 'userToken'; // Changed to match cartService and other services
+const USER_KEY = 'user'; // Simplified key name
 const ADMIN_TOKEN_KEY = 'garja_admin_token';
 const ADMIN_USER_KEY = 'garja_admin';
 

@@ -1,0 +1,305 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { orderService, Order } from '@/services/orderService';
+import { useAuth } from '@/contexts/AuthContext';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import Link from 'next/link';
+
+const OrderHistoryPage: React.FC = () => {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/?login=true&redirect=/user/orders');
+      return;
+    }
+
+    loadOrderHistory();
+  }, [user, router]);
+
+  const loadOrderHistory = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const orderHistory = await orderService.getOrderHistory();
+      setOrders(orderHistory);
+    } catch (err: any) {
+      console.error('Error loading orders:', err);
+      setError(err.message || 'Failed to load order history');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    const colors = {
+      'PENDING': 'bg-yellow-100 text-yellow-800',
+      'CONFIRMED': 'bg-blue-100 text-blue-800',
+      'PROCESSING': 'bg-indigo-100 text-indigo-800',
+      'SHIPPED': 'bg-purple-100 text-purple-800',
+      'DELIVERED': 'bg-green-100 text-green-800',
+      'CANCELLED': 'bg-red-100 text-red-800'
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
+
+  if (isLoading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your orders...</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Header />
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Page Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Order History</h1>
+            <p className="text-gray-600 mt-2">Track and manage your orders</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600">{error}</p>
+              <button
+                onClick={loadOrderHistory}
+                className="mt-2 text-sm text-red-600 underline hover:text-red-800"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {orders.length === 0 && !error ? (
+            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">No orders yet</h3>
+              <p className="text-gray-600 mb-6">When you place your first order, it will appear here.</p>
+              <Link
+                href="/products"
+                className="inline-block bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+              >
+                Start Shopping
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {orders.map((order) => (
+                <div key={order.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div className="p-6">
+                    {/* Order Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Order #{order.id}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Placed on {formatDate(order.orderDate)}
+                        </p>
+                      </div>
+                      <div className="mt-2 sm:mt-0">
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeColor(order.status)}`}>
+                          {orderService.formatOrderStatus(order.status)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Order Details */}
+                    <div className="border-t pt-4">
+                      <div className="flex items-start space-x-4">
+                        {order.image && (
+                          <img
+                            src={order.image}
+                            alt={order.productName}
+                            className="w-20 h-20 object-cover rounded-lg"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{order.productName}</h4>
+                          <div className="mt-1 text-sm text-gray-600 space-y-1">
+                            <p>Quantity: {order.quantity}</p>
+                            {order.size && <p>Size: {order.size}</p>}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold text-gray-900">
+                            ₹{order.totalAmount.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Actions */}
+                    <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div className="mb-3 sm:mb-0">
+                        {order.message && (
+                          <p className="text-sm text-green-600 font-medium">{order.message}</p>
+                        )}
+                      </div>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="text-sm font-medium text-gray-700 hover:text-gray-900 underline underline-offset-2"
+                        >
+                          View Details
+                        </button>
+                        {order.status === 'DELIVERED' && (
+                          <button className="text-sm font-medium text-black hover:text-gray-700 underline underline-offset-2">
+                            Write Review
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Order Summary Stats */}
+          {orders.length > 0 && (
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                <p className="text-sm text-gray-600 mb-1">Total Orders</p>
+                <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                <p className="text-sm text-gray-600 mb-1">Total Spent</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  ₹{orders.reduce((sum, order) => sum + order.totalAmount, 0).toFixed(2)}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                <p className="text-sm text-gray-600 mb-1">Last Order</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {orders.length > 0 
+                    ? new Date(orders[0].orderDate).toLocaleDateString('en-IN')
+                    : 'N/A'
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedOrder(null)}
+        >
+          <div 
+            className="bg-white rounded-lg max-w-lg w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">
+                Order Details #{selectedOrder.id}
+              </h3>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600">Order Date</p>
+                <p className="font-medium">{formatDate(selectedOrder.orderDate)}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600">Status</p>
+                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeColor(selectedOrder.status)}`}>
+                  {orderService.formatOrderStatus(selectedOrder.status)}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600">Product</p>
+                <div className="flex items-start space-x-3 mt-2">
+                  {selectedOrder.image && (
+                    <img
+                      src={selectedOrder.image}
+                      alt={selectedOrder.productName}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium">{selectedOrder.productName}</p>
+                    <p className="text-sm text-gray-600">Quantity: {selectedOrder.quantity}</p>
+                    {selectedOrder.size && (
+                      <p className="text-sm text-gray-600">Size: {selectedOrder.size}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600">Total Amount</p>
+                <p className="text-xl font-bold text-gray-900">₹{selectedOrder.totalAmount.toFixed(2)}</p>
+              </div>
+
+              {selectedOrder.message && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-green-600 font-medium">{selectedOrder.message}</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setSelectedOrder(null)}
+              className="w-full mt-6 bg-black text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      <Footer />
+    </>
+  );
+};
+
+export default OrderHistoryPage;

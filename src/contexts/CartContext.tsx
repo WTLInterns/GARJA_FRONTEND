@@ -1,8 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { CartItem, Product } from '@/types/product';
 import SuccessNotification from '@/components/SuccessNotification';
+import { cartService, Cart as BackendCart, CartItem as BackendCartItem } from '@/services/cartService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CartState {
   items: CartItem[];

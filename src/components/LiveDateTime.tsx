@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 
 const LiveDateTime = () => {
-  const [dateTime, setDateTime] = useState(new Date());
+  const [dateTime, setDateTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    // Set initial time only on client
+    setDateTime(new Date());
+
     const timer = setInterval(() => {
       setDateTime(new Date());
     }, 1000);
@@ -29,6 +32,9 @@ const LiveDateTime = () => {
       hour12: false
     });
   };
+
+  // Prevent hydration mismatch by rendering nothing until mounted
+  if (!dateTime) return null;
 
   return (
     <div className="space-y-2">

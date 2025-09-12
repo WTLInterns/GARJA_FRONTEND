@@ -22,6 +22,12 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
     }
   };
 
+  // Helper derived amounts
+  const subtotal = state.totalAmount;
+  const shippingCost = subtotal > 1000 ? 0 : (subtotal > 0 ? 99 : 0);
+  const tax = Math.round(subtotal * 0.18);
+  const total = subtotal + shippingCost + tax;
+
   const handleCheckout = () => {
     if (!user && onAuthRequired) {
       onAuthRequired();
@@ -258,14 +264,22 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
           {/* Amazon-style Footer */}
           {state.items.length > 0 && (
             <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+<div className="mb-4 space-y-1">
+                <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>Subtotal ({state.totalItems} items):</span>
-                  <span>₹{state.totalAmount.toLocaleString()}</span>
+                  <span>₹{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex items-center justify-between text-lg font-semibold text-gray-900">
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Shipping:</span>
+                  <span>{shippingCost === 0 ? <span className="text-green-600">Free</span> : `₹${shippingCost}`}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Tax (GST 18%):</span>
+                  <span>₹{tax.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between text-lg font-semibold text-gray-900 pt-1 border-t">
                   <span>Total:</span>
-                  <span>₹{state.totalAmount.toLocaleString()}</span>
+                  <span>₹{total.toLocaleString()}</span>
                 </div>
               </div>
 

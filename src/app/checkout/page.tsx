@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ShippingAddress } from '@/types/product';
+import { orderService } from '@/services/orderService';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
@@ -185,67 +186,26 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  const handleRazorpayPayment = async () => {
-    try {
-      setIsProcessing(true);
+const handleRazorpayPayment = async () => {
+  try {
+    setIsProcessing(true);
 
-      const orderData = await createOrder();
+    // For now, directly call the API checkout without Razorpay
+    const order = await orderService.checkout();
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: finalTotal * 100, // Amount in paise
-        currency: 'INR',
-        name: 'GARJA Fashion',
-        description: 'Fashion Purchase',
-        order_id: orderData.id,
-        handler: function (response: any) {
-          // Payment successful
-          console.log('Payment successful:', response);
-          
-          // Show success message toast
-          setSuccessMessage('Order placed successfully! Thank you for your purchase.');
-          setShowSuccess(true);
-
-          // Clear cart
-          clearCart();
-
-          // Redirect to home page after short delay
-          setTimeout(() => {
-            router.push('/');
-          }, 1500);
-        },
-        prefill: {
-          name: shippingAddress.fullName,
-          email: user?.email || '',
-          contact: shippingAddress.phone,
-        },
-        notes: {
-          address: `${shippingAddress.addressLine1}, ${shippingAddress.city}`,
-        },
-        theme: {
-          color: '#000000',
-        },
-        modal: {
-          ondismiss: function () {
-            setIsProcessing(false);
-          }
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
-        console.error('Payment failed:', response.error);
-        alert('Payment failed. Please try again.');
-        setIsProcessing(false);
-      });
-
-      rzp.open();
-    } catch (error) {
-      console.error('Error initiating payment:', error);
-      alert('Error initiating payment. Please try again.');
-      setIsProcessing(false);
-    }
-  };
+    setSuccessMessage(order.message || 'Order placed successfully!');
+    setShowSuccess(true);
+    await clearCart();
+    setTimeout(() => {
+      router.push('/user/orders');
+    }, 1500);
+  } catch (error) {
+    console.error('Error placing order:', error);
+    alert('Error placing order. Please try again.');
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const handleCODOrder = async () => {
     try {

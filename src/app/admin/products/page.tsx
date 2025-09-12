@@ -144,7 +144,7 @@ const ProductsPage = () => {
     }
   };
 
-  const categories = ['all', 'Latest', 'T-Shirts', 'Hoodies', 'Jeans', 'Jackets', 'Shirts'];
+  const categories = ['all', 'Latest', 'TShirts', 'Hoodie', 'Jeans', 'Jackets', 'Shirts'];
 
   const getProductsToDisplay = () => {
     let productsToFilter = selectedCategory === 'Latest' ? latestProducts : products;

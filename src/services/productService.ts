@@ -1,23 +1,25 @@
-import { apiService } from '@/utils/api';
+import axios from 'axios';
 
-// Product type based on API documentation
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
+
+// Product type based on actual API response
 export interface ApiProduct {
   id: number;
   productName: string;
   price: string;
   quantity: number;
-  active: boolean;
+  isActive: string;  // Changed from boolean to string based on API docs
   description: string;
-  xs?: string;
-  m?: string;
-  l?: string;
-  xl?: string;
-  xxl?: string;
-  imageUrl?: string;
+  XS?: string;  // Changed to uppercase based on API docs
+  M?: string;
+  L?: string;
+  XL?: string;
+  XXL?: string;
+  imageUrl: string;
   imagePublicId?: string;
   category: string;
-  date: string;
-  time: string;
+  date?: string;
+  time?: string;
   reviews?: any[];
 }
 
@@ -52,13 +54,13 @@ const mapCategory = (apiCategory: string): Product['category'] => {
 
 // Convert API product to frontend format
 const transformProduct = (apiProduct: ApiProduct): Product => {
-  // Extract available sizes
+  // Extract available sizes based on stock
   const sizes: string[] = [];
-  if (apiProduct.xs && apiProduct.xs !== 'Out of Stock') sizes.push('XS');
-  if (apiProduct.m && apiProduct.m !== 'Out of Stock') sizes.push('M');
-  if (apiProduct.l && apiProduct.l !== 'Out of Stock') sizes.push('L');
-  if (apiProduct.xl && apiProduct.xl !== 'Out of Stock') sizes.push('XL');
-  if (apiProduct.xxl && apiProduct.xxl !== 'Out of Stock') sizes.push('XXL');
+  if (apiProduct.XS && parseInt(apiProduct.XS) > 0) sizes.push('XS');
+  if (apiProduct.M && parseInt(apiProduct.M) > 0) sizes.push('M');
+  if (apiProduct.L && parseInt(apiProduct.L) > 0) sizes.push('L');
+  if (apiProduct.XL && parseInt(apiProduct.XL) > 0) sizes.push('XL');
+  if (apiProduct.XXL && parseInt(apiProduct.XXL) > 0) sizes.push('XXL');
   
   // If no sizes are specified, default to common sizes
   if (sizes.length === 0) {
@@ -78,10 +80,10 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
   const tags = [
     apiProduct.category,
     'new-arrival',
-    apiProduct.active ? 'in-stock' : 'out-of-stock'
+    apiProduct.isActive === 'true' ? 'in-stock' : 'out-of-stock'
   ];
   
-  const createdAt = `${apiProduct.date} ${apiProduct.time}`;
+  const createdAt = apiProduct.date && apiProduct.time ? `${apiProduct.date} ${apiProduct.time}` : new Date().toISOString();
   
   return {
     id: apiProduct.id.toString(),
@@ -93,84 +95,90 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
     images: apiProduct.imageUrl ? [apiProduct.imageUrl] : ['/images/placeholder.jpg'],
     sizes: sizes,
     colors: colors,
-    inStock: apiProduct.active && apiProduct.quantity > 0,
+    inStock: apiProduct.isActive === 'true' && apiProduct.quantity > 0,
     stockQuantity: apiProduct.quantity,
     rating: 4.5, // Default rating since API doesn't provide it
     reviewCount: apiProduct.reviews?.length || 0,
     tags: tags,
     createdAt: createdAt,
-    updatedAt: createdAt // Use same as createdAt since API doesn't provide separate updated time
+    updatedAt: createdAt
   };
 };
 
 /**
- * Product Service for public product operations
- * NOTE: These currently use admin endpoints which require authentication.
- * In production, you should create public endpoints in your backend.
+ * Product Service using real public API endpoints
  */
 export const productService = {
   /**
-   * Get all products
-   * WARNING: This should NOT use admin endpoints in production.
-   * Create public endpoints like /api/products for unauthenticated users.
+   * Get all products from public API
    */
   getAllProducts: async (): Promise<Product[]> => {
     try {
-      // Note: Backend only has admin endpoints currently
-      // Using mock data until public endpoints are implemented
-      console.warn('Using mock data. Backend needs public product endpoints.');
-      return getMockProducts();
-    } catch (error) {
-      console.warn('Error loading products, using fallback mock data:', error);
+      const response = await axios.get(`${API_URL}/public/getAllProducts`);
+      const products: ApiProduct[] = response.data;
+      return products.map(transformProduct);
+    } catch (error: any) {
+      console.error('Error fetching products:', error);
+      // Return mock data as fallback for development
       return getMockProducts();
     }
   },
 
   /**
-   * Get products by category
-   * WARNING: This should NOT use admin endpoints in production.
+   * Get products by category from public API
    */
   getProductsByCategory: async (category: string): Promise<Product[]> => {
     try {
-      // Fetch all products and filter by category
+      // Map frontend category to backend category format
+      const backendCategory = category.replace('-', '').toLowerCase();
+      const response = await axios.get(`${API_URL}/public/getProductByCategory`, {
+        params: { category: backendCategory }
+      });
+      const products: ApiProduct[] = response.data;
+      return products.map(transformProduct);
+    } catch (error: any) {
+      console.error('Failed to fetch products by category:', error);
+      // Fallback to filtering all products
       const allProducts = await productService.getAllProducts();
       return allProducts.filter(p => p.category === category);
-    } catch (error) {
-      console.error('Failed to fetch products by category:', error);
-      return [];
     }
   },
 
   /**
-   * Get latest products
-   * WARNING: This should NOT use admin endpoints in production.
+   * Get latest products from public API
    */
   getLatestProducts: async (): Promise<Product[]> => {
-    // In production, this should be a public endpoint
-    // For now, return first 3 mock products
-    console.warn('Using mock data. Implement public product endpoints in backend.');
-    return getMockProducts().slice(0, 3);
+    try {
+      const response = await axios.get(`${API_URL}/public/getLatestProducts`);
+      const products: ApiProduct[] = response.data;
+      return products.map(transformProduct);
+    } catch (error: any) {
+      console.error('Error fetching latest products:', error);
+      // Fallback to first 3 products
+      const allProducts = await productService.getAllProducts();
+      return allProducts.slice(0, 3);
+    }
   },
 
   /**
-   * Get single product by ID
-   * This would need a specific endpoint in your backend
+   * Get single product by ID from public API
    */
   getProductById: async (id: string): Promise<Product | null> => {
     try {
-      // Note: This endpoint doesn't exist in the API documentation
-      // You'll need to add it to your backend or use getAllProducts and filter
+      const response = await axios.get(`${API_URL}/public/getProductById/${id}`);
+      const product: ApiProduct = response.data;
+      return transformProduct(product);
+    } catch (error: any) {
+      console.error('Failed to fetch product:', error);
+      // Fallback to filtering from all products
       const products = await productService.getAllProducts();
       const product = products.find(p => p.id === id);
       return product || null;
-    } catch (error) {
-      console.error('Failed to fetch product:', error);
-      return null;
     }
   },
 
   /**
-   * Search products (client-side filtering for now)
+   * Search products (client-side filtering)
    */
   searchProducts: async (query: string): Promise<Product[]> => {
     try {

@@ -6,10 +6,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import LiveDateTime from '@/components/LiveDateTime';
+import { productService } from '@/services/productService';
+import { Product } from '@/types/product';
 import '../styles/footer.css';
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [latestProducts, setLatestProducts] = useState<Product[]>([]);
+  const [tshirtProducts, setTshirtProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const heroSlides = [
     {
@@ -61,6 +66,28 @@ export default function Home() {
 
     return () => clearInterval(interval);
   }, [heroSlides.length]);
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        // Fetch latest products
+        const latest = await productService.getLatestProducts();
+        setLatestProducts(latest.slice(0, 4)); // Get first 4 latest products
+        
+        // Fetch t-shirt products
+        const tshirts = await productService.getProductsByCategory('t-shirts');
+        setTshirtProducts(tshirts.slice(0, 4)); // Get first 4 t-shirts
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
@@ -376,95 +403,88 @@ export default function Home() {
                             </button>
                           </Link>
                         </div>
+
                       </div>
                     </div>
                   </div>
                   
-                  {/* T-Shirt Product Grid - Same structure as formal section */}
+                  {/* T-Shirt Product Grid - Dynamic data from API */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-                    {/* T-Shirt 1 */}
-                    <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                      <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                        <Image
-                          src="/images/tshirt1.jpg"
-                          alt="T-Shirt 1"
-                          width={300}
-                          height={400}
-                          className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="mt-3 sm:mt-4 text-center">
-                        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2">
-                          Premium Cotton T-Shirt
-                        </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                          From ₹299
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* T-Shirt 2 */}
-                    <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                      <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                        <Image
-                          src="/images/tshirt2.jpg"
-                          alt="T-Shirt 2"
-                          width={300}
-                          height={400}
-                          className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="mt-3 sm:mt-4 text-center">
-                        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2">
-                          Classic Fit T-Shirt
-                        </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                          From ₹349
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* T-Shirt 3 */}
-                    <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                      <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                        <Image
-                          src="/images/tshirt3.jpg"
-                          alt="T-Shirt 3"
-                          width={300}
-                          height={400}
-                          className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="mt-3 sm:mt-4 text-center">
-                        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2">
-                          Slim Fit T-Shirt
-                        </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                          From ₹399
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* T-Shirt 4 */}
-                    <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                      <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                        <Image
-                          src="/images/tshirt4.jpg"
-                          alt="T-Shirt 4"
-                          width={300}
-                          height={400}
-                          className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="mt-3 sm:mt-4 text-center">
-                        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2">
-                          Designer T-Shirt
-                        </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                          From ₹499
-                        </p>
-                      </div>
-                    </div>
+                    {loading ? (
+                      // Loading skeleton
+                      Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="animate-pulse">
+                          <div className="bg-gray-200 rounded-xl h-48 sm:h-64 lg:h-96"></div>
+                          <div className="mt-3 sm:mt-4 space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                          </div>
+                        </div>
+                      ))
+                    ) : tshirtProducts.length > 0 ? (
+                      // Display real products
+                      tshirtProducts.map((product) => (
+                        <Link key={product.id} href={`/products/${product.id}`}>
+                          <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
+                            <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
+                              <Image
+                                src={product.images[0] || '/images/tshirt.jpg'}
+                                alt={product.name}
+                                width={300}
+                                height={400}
+                                className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
+                              />
+                              {product.originalPrice && (
+                                <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                  {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-3 sm:mt-4 text-center">
+                              <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2 truncate px-2">
+                                {product.name}
+                              </h3>
+                              <div className="flex items-center justify-center gap-2">
+                                <p className="text-xs sm:text-sm text-gray-900 font-bold">
+                                  ₹{product.price}
+                                </p>
+                                {product.originalPrice && (
+                                  <p className="text-xs sm:text-sm text-gray-500 line-through">
+                                    ₹{product.originalPrice}
+                                  </p>
+                                )}
+                              </div>
+                              {!product.inStock && (
+                                <p className="text-xs text-red-500 mt-1">Out of Stock</p>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      // Fallback to static content if no products
+                      Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="group cursor-pointer hover:scale-105 transition-all duration-300">
+                          <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
+                            <Image
+                              src={`/images/tshirt${index + 1}.jpg`}
+                              alt={`T-Shirt ${index + 1}`}
+                              width={300}
+                              height={400}
+                              className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
+                            />
+                          </div>
+                          <div className="mt-3 sm:mt-4 text-center">
+                            <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2">
+                              Premium T-Shirt
+                            </h3>
+                            <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                              From ₹299
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </section>

@@ -45,13 +45,14 @@ const api: AxiosInstance = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    // Check admin token first, then regular token
+    // Prefer admin token for admin routes, otherwise use regular user token
     const adminToken = localStorage.getItem('garja_admin_token');
-    const regularToken = localStorage.getItem('garja_token');
+    // Support both legacy and new keys for compatibility
+    const regularToken = localStorage.getItem('userToken') || localStorage.getItem('garja_token');
     const token = adminToken || regularToken;
     
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      (config.headers as any)['Authorization'] = `Bearer ${token}`;
     }
     return config;
   },
@@ -72,15 +73,16 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      // Clear all auth data (both regular and admin)
+      // Clear all auth data (both regular and admin). Support both new and legacy keys.
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('user');
       localStorage.removeItem('garja_token');
       localStorage.removeItem('garja_user');
       localStorage.removeItem('garja_admin_token');
       localStorage.removeItem('garja_admin');
       
-      // Redirect to login if not already there
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        // Dispatch custom event for auth contexts to handle
+      // Notify app about logout so contexts can react
+      if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'token_expired' } }));
       }
     }
@@ -95,11 +97,13 @@ api.interceptors.response.use(
       }
       
       // Dispatch custom event for insufficient permissions
-      window.dispatchEvent(new CustomEvent('auth:forbidden', { 
-        detail: { 
-          message: 'You do not have permission to perform this action' 
-        } 
-      }));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:forbidden', { 
+          detail: { 
+            message: 'You do not have permission to perform this action' 
+          } 
+        }));
+      }
     }
 
     return Promise.reject(error);
