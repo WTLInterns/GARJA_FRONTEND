@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -24,6 +23,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAuthRequired }) =>
   const [selectedColor, setSelectedColor] = useState(product.colors[0]);
   const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
   const [wlLoading, setWlLoading] = useState<boolean>(false);
+
+  // Format price to avoid floating artifacts and apply Indian numbering
+  const formatPrice = (n: number) =>
+    new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(n));
+
+  // Deterministic dummy rating/review count when backend fields are missing
+  const seed = Array.from(String(product.id)).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const generatedRatingRaw = 3.5 + ((seed % 15) / 10); // 3.5 -> 4.9 step 0.1
+  const generatedRating = Math.min(4.9, parseFloat(generatedRatingRaw.toFixed(1)));
+  const generatedReviews = 50 + ((seed * 37) % 1200); // 50 -> 1249
+
+  const effectiveRating: number = (product as any).rating && typeof (product as any).rating === 'number'
+    ? (product as any).rating
+    : generatedRating;
+  const effectiveReviewCount: number = product.reviewCount && product.reviewCount > 0
+    ? product.reviewCount
+    : generatedReviews;
 
   useEffect(() => {
     // Initialize wishlist state from backend if authenticated
@@ -123,21 +139,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAuthRequired }) =>
             {[...Array(5)].map((_, i) => (
               <svg
                 key={i}
-                className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                className={`w-4 h-4 ${i < Math.floor(effectiveRating) ? 'text-yellow-400' : 'text-gray-300'}`}
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
             ))}
-            <span className="text-sm text-gray-600 ml-1">({product.reviewCount})</span>
+            <span className="text-sm text-gray-600 ml-1">({effectiveReviewCount})</span>
           </div>
         </div>
         
         <div className="flex items-center mb-3">
-          <span className="text-lg font-bold text-gray-900">₹{product.price}</span>
+          <span className="text-lg font-bold text-gray-900">₹{formatPrice(product.price)}</span>
           {product.originalPrice && (
-            <span className="text-sm text-gray-500 line-through ml-2">₹{product.originalPrice}</span>
+            <span className="text-sm text-gray-500 line-through ml-2">₹{formatPrice(product.originalPrice)}</span>
           )}
         </div>
         

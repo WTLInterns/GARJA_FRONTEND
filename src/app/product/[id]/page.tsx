@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { wishlistService } from '@/services/wishlistService';
-import { orderService } from '@/services/orderService';
+// import { orderService } from '@/services/orderService';
 
 const ProductDetailPage: React.FC = () => {
   const params = useParams();
@@ -27,6 +27,20 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wlLoading, setWlLoading] = useState(false);
+
+  // Format price (IN locale) and deterministic dummy rating helpers
+  const formatPrice = (n: number) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(n));
+  const getEffectiveRating = (p: Product) => {
+    const seed = Array.from(String(p.id)).reduce((acc, ch) => acc + (ch as string).toString().charCodeAt(0), 0);
+    const generatedRaw = 3.5 + ((seed % 15) / 10); // 3.5 -> 4.9
+    const generated = Math.min(4.9, parseFloat(generatedRaw.toFixed(1)));
+    return (p as any).rating && typeof (p as any).rating === 'number' ? (p as any).rating : generated;
+  };
+  const getEffectiveReviewCount = (p: Product) => {
+    const seed = Array.from(String(p.id)).reduce((acc, ch) => acc + (ch as string).toString().charCodeAt(0), 0);
+    const generated = 50 + ((seed * 37) % 1200); // 50 -> 1249
+    return p.reviewCount && p.reviewCount > 0 ? p.reviewCount : generated;
+  };
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -90,24 +104,13 @@ const ProductDetailPage: React.FC = () => {
 
   const handleBuyNow = async () => {
     if (!user) {
-      router.push('/?login=true&redirect=' + encodeURIComponent(window.location.pathname));
+      router.push('/?login=true&redirect=' + encodeURIComponent('/checkout'));
       return;
     }
     if (!product) return;
-    try {
-      // Call Buy Now API directly
-      const order = await orderService.buyNow({
-        productId: Number(product.id),
-        quantity,
-        size: selectedSize || (product.sizes[0] || 'M'),
-      });
-      console.log('[Order] Buy Now success:', order);
-      // Navigate to orders page on success
-      router.push('/user/orders');
-    } catch (e) {
-      console.error('[Order] Buy Now failed:', e);
-      alert((e as any)?.message || 'Failed to place order');
-    }
+    // Add the item to cart and go to checkout
+    addItem(product, quantity, selectedSize || (product.sizes[0] || 'M'), selectedColor || (product.colors[0] || 'Black'));
+    router.push('/checkout');
   };
 
   const handleToggleWishlist = async () => {
@@ -232,7 +235,7 @@ const ProductDetailPage: React.FC = () => {
                   {[...Array(5)].map((_, i) => (
                     <svg
                       key={i}
-                      className={`w-5 h-5 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                      className={`w-5 h-5 ${i < Math.floor(getEffectiveRating(product)) ? 'text-yellow-400' : 'text-gray-300'}`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -240,15 +243,15 @@ const ProductDetailPage: React.FC = () => {
                     </svg>
                   ))}
                   <span className="text-sm text-gray-600 ml-2">
-                    {product.rating} ({product.reviewCount} reviews)
+                    {getEffectiveRating(product).toFixed(1)} ({getEffectiveReviewCount(product).toLocaleString('en-IN')} ratings)
                   </span>
                 </div>
               </div>
               
               <div className="flex items-center space-x-4 mb-6">
-                <span className="text-3xl font-bold text-gray-900">₹{product.price}</span>
+                <span className="text-3xl font-bold text-gray-900">₹{formatPrice(product.price)}</span>
                 {product.originalPrice && (
-                  <span className="text-xl text-gray-500 line-through">₹{product.originalPrice}</span>
+                  <span className="text-xl text-gray-500 line-through">₹{formatPrice(product.originalPrice)}</span>
                 )}
                 {product.originalPrice && (
                   <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">

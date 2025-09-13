@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface CartSidebarProps {
   onAuthRequired?: () => void;
@@ -13,6 +14,7 @@ interface CartSidebarProps {
 const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
   const { state, removeItem, updateQuantity, closeCart } = useCart();
   const { user } = useAuth();
+  const router = useRouter();
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
@@ -29,21 +31,14 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
   const total = subtotal + shippingCost + tax;
 
   const handleCheckout = () => {
-    if (!user && onAuthRequired) {
-      onAuthRequired();
-      return;
-    }
+    // Always go to checkout; page itself will handle auth modal if needed
     closeCart();
-    window.location.href = '/checkout';
+    router.push('/checkout');
   };
 
   const handleViewCart = () => {
-    if (!user && onAuthRequired) {
-      onAuthRequired();
-      return;
-    }
     closeCart();
-    window.location.href = '/cart';
+    router.push('/cart');
   };
 
   // Close sidebar when clicking outside or pressing Escape
@@ -182,30 +177,48 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
                         <Image
                           src={item.product.images[0]}
                           alt={item.product.name}
-                          width={80}
-                          height={80}
-                          className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                          width={64}
+                          height={64}
+                          className="w-16 h-16 object-cover rounded border border-gray-200"
                         />
-                    </div>
-                    
-                      <div className="flex-1 min-w-0">
-                        <Link href={`/product/${item.product.id}`} onClick={closeCart}>
-                          <h3 className="text-sm font-medium text-gray-900 hover:text-black transition-colors line-clamp-2 mb-1">
-                            {item.product.name}
-                          </h3>
-                        </Link>
+                      </div>
 
-                        <div className="flex items-center text-xs text-gray-600 mb-2">
-                          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-                            {item.selectedSize}
-                          </span>
-                          <span className="mx-2">•</span>
-                          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-                            {item.selectedColor}
-                          </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <Link href={`/product/${item.product.id}`} onClick={closeCart} className="flex-1">
+                            <h3 className="text-sm font-medium text-gray-900 hover:text-black transition-colors line-clamp-2">
+                              {item.product.name}
+                            </h3>
+                          </Link>
+                          {/* Inline quantity stepper (Amazon-like) */}
+                          <div className="flex items-center border border-gray-300 rounded-md">
+                            <button
+                              onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                              className="px-2 py-1 hover:bg-gray-50 transition-colors"
+                              disabled={item.quantity <= 1}
+                              aria-label="Decrease quantity"
+                            >
+                              −
+                            </button>
+                            <span className="px-2 text-sm min-w-[2rem] text-center font-medium">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                              className="px-2 py-1 hover:bg-gray-50 transition-colors"
+                              aria-label="Increase quantity"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="mt-1 flex items-center text-[11px] text-gray-600 gap-2">
+                          <span className="bg-gray-100 px-2 py-0.5 rounded">{item.selectedSize}</span>
+                          <span className="bg-gray-100 px-2 py-0.5 rounded">{item.selectedColor}</span>
+                        </div>
+
+                        <div className="mt-2 flex items-center justify-between">
                           <div className="text-sm">
                             <span className="font-semibold text-gray-900">
                               ₹{(item.product.price * item.quantity).toLocaleString()}
@@ -216,38 +229,9 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
                               </span>
                             )}
                           </div>
-                        
-                        </div>
-
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex items-center border border-gray-300 rounded-md">
-                              <button
-                                onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                className="p-2 hover:bg-gray-50 transition-colors"
-                                disabled={item.quantity <= 1}
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                                </svg>
-                              </button>
-                              <span className="px-3 py-2 text-sm min-w-[3rem] text-center font-medium">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                className="p-2 hover:bg-gray-50 transition-colors"
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-
                           <button
                             onClick={() => removeItem(item.id)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium underline transition-colors"
+                            className="text-red-600 hover:text-red-800 text-xs font-medium underline transition-colors"
                             title="Remove item"
                           >
                             Remove

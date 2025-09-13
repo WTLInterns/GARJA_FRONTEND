@@ -23,6 +23,7 @@ const CheckoutPage: React.FC = () => {
   const [isClient, setIsClient] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [orderJustPlaced, setOrderJustPlaced] = useState(false);
 
   // All hooks must be declared before any early returns
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
@@ -39,6 +40,8 @@ const CheckoutPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'cod'>('cod');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Partial<ShippingAddress>>({});
+  const [savedAddress, setSavedAddress] = useState<ShippingAddress | null>(null);
+  const [addressMode, setAddressMode] = useState<'saved' | 'new'>('new');
 
   useEffect(() => {
     setIsClient(true);
@@ -50,13 +53,26 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    if (user && state.items.length === 0) {
+    if (user && state.items.length === 0 && !orderJustPlaced) {
       router.push('/cart');
       return;
     }
 
     // No third-party payment script needed (COD only)
-  }, [user, isAuthLoading, state.items.length, router]);
+    // Load saved address from localStorage
+    try {
+      const saved = localStorage.getItem('shippingAddress');
+      if (saved) {
+        const parsed: ShippingAddress = JSON.parse(saved);
+        setSavedAddress(parsed);
+        setAddressMode('saved');
+        // Pre-fill state with saved so order summary has values
+        setShippingAddress(parsed);
+      }
+    } catch (e) {
+      console.warn('Failed to load saved address', e);
+    }
+  }, [user, isAuthLoading, state.items.length, router, orderJustPlaced]);
 
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
@@ -88,7 +104,7 @@ const CheckoutPage: React.FC = () => {
   }
 
   // Early return for auth check or empty cart
-  if (!user || state.items.length === 0) {
+  if ((!user || state.items.length === 0) && !orderJustPlaced) {
     return (
       <>
         <Header />
@@ -146,6 +162,18 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
+  const useSavedAddress = () => {
+    if (savedAddress) {
+      setShippingAddress(savedAddress);
+      setAddressMode('saved');
+      setErrors({});
+    }
+  };
+
+  const useNewAddress = () => {
+    setAddressMode('new');
+  };
+
   const handleCODOrder = async () => {
     try {
       setIsProcessing(true);
@@ -156,9 +184,19 @@ const CheckoutPage: React.FC = () => {
       // Show success message toast
       setSuccessMessage(order.message || 'Order placed successfully!');
       setShowSuccess(true);
+      setOrderJustPlaced(true);
 
       // Clear cart
       await clearCart();
+
+      // Persist address if user used a new address
+      if (addressMode === 'new') {
+        try {
+          localStorage.setItem('shippingAddress', JSON.stringify(shippingAddress));
+        } catch (e) {
+          console.warn('Failed to save shipping address', e);
+        }
+      }
 
       // Redirect to orders page after short delay
       setTimeout(() => {
@@ -197,6 +235,31 @@ const CheckoutPage: React.FC = () => {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Shipping Address</h2>
 
+                {/* Address Mode Switch */}
+                {savedAddress ? (
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="text-sm text-gray-700">
+                      Using: <span className="font-medium">{addressMode === 'saved' ? 'Saved Address' : 'New Address'}</span>
+                    </div>
+                    {addressMode === 'saved' ? (
+                      <button type="button" onClick={useNewAddress} className="text-sm text-blue-600 hover:underline">Use different address</button>
+                    ) : (
+                      <button type="button" onClick={useSavedAddress} className="text-sm text-blue-600 hover:underline">Use saved address</button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mb-4 text-sm text-gray-600">No saved address found. Please enter your address below.</p>
+                )}
+
+                {addressMode === 'saved' && savedAddress ? (
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <p className="text-gray-900 font-medium">{savedAddress.fullName}</p>
+                    <p className="text-gray-700 text-sm">{savedAddress.addressLine1}{savedAddress.addressLine2 ? `, ${savedAddress.addressLine2}` : ''}</p>
+                    <p className="text-gray-700 text-sm">{savedAddress.city}, {savedAddress.state} - {savedAddress.zipCode}</p>
+                    <p className="text-gray-700 text-sm">{savedAddress.country}</p>
+                    <p className="text-gray-700 text-sm mt-1">Phone: {savedAddress.phone}</p>
+                  </div>
+                ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -305,6 +368,7 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   </div>
                 </form>
+                )}
               </div>
 
               {/* Payment Method */}
