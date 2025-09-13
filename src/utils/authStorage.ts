@@ -1,8 +1,8 @@
 import { AuthUser } from './api';
 
-// Storage keys
-const TOKEN_KEY = 'userToken'; // Changed to match cartService and other services
-const USER_KEY = 'user'; // Simplified key name
+// Storage keys (kept simple and stable)
+const TOKEN_KEY = 'userToken';
+const USER_KEY = 'user';
 const ADMIN_TOKEN_KEY = 'garja_admin_token';
 const ADMIN_USER_KEY = 'garja_admin';
 
@@ -42,8 +42,7 @@ function getUserRoleFromToken(token: string): string | null {
     return null;
   }
   
-  // Log the decoded token structure for debugging
-  console.log('Decoded JWT token:', decoded);
+  // Optional debug removed to reduce noise
   
   // Helper function to normalize role string (remove ROLE_ prefix)
   const normalizeRole = (roleStr: string): string => {
@@ -105,11 +104,11 @@ function getUserRoleFromToken(token: string): string | null {
   // 7. Check if this is a simple JWT with email as subject and role info missing
   // In this case, we'll rely on the user object stored separately
   if (decoded.sub && typeof decoded.sub === 'string' && decoded.sub.includes('@')) {
-    console.warn('JWT appears to only contain email in subject, no role info found');
+    // No role info present; return null
     return null;
   }
   
-  console.log('No role found in token. Available fields:', Object.keys(decoded));
+  // No role field found
   return null;
 }
 
@@ -125,10 +124,7 @@ export const authStorage = {
       }
 
       // Validate token
-      if (!data.token || typeof data.token !== 'string') {
-        console.error('Invalid token provided');
-        return false;
-      }
+      if (!data.token || typeof data.token !== 'string') return false;
 
       // Store token
       localStorage.setItem(TOKEN_KEY, data.token);
@@ -150,13 +146,7 @@ export const authStorage = {
       const storedToken = localStorage.getItem(TOKEN_KEY);
       const storedUser = localStorage.getItem(USER_KEY);
       
-      if (storedToken === data.token && storedUser === userString) {
-        console.log('Auth data saved successfully');
-        return true;
-      } else {
-        console.error('Failed to verify saved auth data');
-        return false;
-      }
+      return storedToken === data.token && storedUser === userString;
     } catch (error) {
       console.error('Error saving auth data:', error);
       // Try to clean up partial saves
@@ -170,50 +160,25 @@ export const authStorage = {
     }
   },
 
-  // Save admin authentication data
+  // Save admin authentication data (do not touch regular user storage on error)
   saveAdminAuth: (data: { token: string; user: AuthUser }) => {
     try {
-      // Check if we're in a browser environment
-      if (typeof window === 'undefined' || !window.localStorage) {
-        console.error('localStorage is not available');
-        return false;
-      }
+      if (typeof window === 'undefined' || !window.localStorage) return false;
+      if (data.user.role !== 'ADMIN') return false;
 
-      // First check if user role from the user object is ADMIN
-      if (data.user.role !== 'ADMIN') {
-        console.error('User does not have ADMIN role from user object');
-        return false;
-      }
-      
-      // Also try to verify from token (if token contains role info)
-      const roleFromToken = getUserRoleFromToken(data.token);
-      if (roleFromToken && roleFromToken !== 'ADMIN') {
-        console.error('Token role mismatch: expected ADMIN, got', roleFromToken);
-        // Continue anyway if user object has ADMIN role
-      }
-      
-      // Store admin-specific keys
+      // Store admin token and user
       localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
-      // Remove password from user object before storing
-      const { password, ...userWithoutPassword } = data.user;
+      const userWithoutPassword: any = { ...data.user };
+      delete userWithoutPassword.password;
       localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(userWithoutPassword));
-      
-      // IMPORTANT: Also save in regular auth storage for API calls and fallback checks
+
+      // Also store in regular auth storage for unified access (non-destructive)
       localStorage.setItem(TOKEN_KEY, data.token);
       localStorage.setItem(USER_KEY, JSON.stringify(userWithoutPassword));
-      
-      console.log('Admin auth data saved successfully in both admin and regular storage');
+
       return true;
     } catch (error) {
-      console.error('Error saving admin auth data:', error);
-      // Try to clean up partial saves
-      try {
-        localStorage.removeItem(ADMIN_TOKEN_KEY);
-        localStorage.removeItem(ADMIN_USER_KEY);
-        localStorage.removeItem(TOKEN_KEY);
-      } catch (cleanupError) {
-        console.error('Error during cleanup:', cleanupError);
-      }
+      // Keep existing tokens intact on failure
       return false;
     }
   },
@@ -293,13 +258,11 @@ export const authStorage = {
     }
   },
 
-  // Clear admin authentication data
+  // Clear admin authentication data (does NOT clear regular user session)
   clearAdminAuth: () => {
     try {
       localStorage.removeItem(ADMIN_TOKEN_KEY);
       localStorage.removeItem(ADMIN_USER_KEY);
-      localStorage.removeItem(TOKEN_KEY); // Also clear regular token
-      localStorage.removeItem(USER_KEY); // Also clear regular user data
       return true;
     } catch (error) {
       console.error('Error clearing admin auth data:', error);
@@ -334,12 +297,10 @@ export const authStorage = {
     }
     
     if (!token) {
-      console.log('No token found for admin authentication check');
       return false;
     }
     
     if (isTokenExpired(token)) {
-      console.log('Token is expired');
       return false;
     }
     
@@ -349,7 +310,6 @@ export const authStorage = {
       try {
         const adminUser = JSON.parse(adminUserStr);
         if (adminUser.role === 'ADMIN') {
-          console.log('Admin authenticated via stored user data');
           return true;
         }
       } catch (e) {
@@ -363,7 +323,6 @@ export const authStorage = {
       try {
         const user = JSON.parse(userStr);
         if (user.role === 'ADMIN') {
-          console.log('Admin authenticated via regular user data');
           return true;
         }
       } catch (e) {
@@ -373,9 +332,7 @@ export const authStorage = {
     
     // Finally, try to extract role from token
     const role = getUserRoleFromToken(token);
-    const isAdmin = role === 'ADMIN';
-    console.log('Admin authentication check via token - role:', role, 'isAdmin:', isAdmin);
-    return isAdmin;
+    return role === 'ADMIN';
   },
 
   // Decode token to get user info

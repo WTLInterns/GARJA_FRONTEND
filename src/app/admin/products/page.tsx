@@ -105,7 +105,6 @@ const ProductsPage = () => {
   }, [isAuthenticated, isAuthLoading, router]);
 
   const loadProducts = async () => {
-    setIsLoadingProducts(true);
     try {
       const fetchedProducts = await adminProductService.getAllProducts();
       setApiProducts(fetchedProducts);
@@ -119,27 +118,25 @@ const ProductsPage = () => {
         setLatestProducts(transformedLatestProducts);
       } catch (latestError) {
         console.warn('Failed to load latest products:', latestError);
-        // Don't show error for this, just use empty array
-        setLatestProducts([]);
+        // Don't block UI if latest fails
       }
-      
     } catch (error: any) {
-      console.error('Failed to load products:', error);
-      
-      // Handle specific error types
-      if (error.message === 'Admin access required') {
-        showNotification('error', 'Admin access required. Please login as admin.');
-        router.push('/admin');
+      console.error('Error loading products:', error);
+      // Do NOT redirect from here to prevent unexpected navigation during CRUD.
+      // Rely on AdminAuthContext for auth enforcement.
+      if (error.response?.status === 500) {
+        showNotification('error', 'Admin server error. Please try again later.');
+      } else if (error.response?.status === 404) {
+        showNotification('error', 'Products not found');
       } else if (error.response?.status === 403) {
         showNotification('error', 'You do not have permission to view products');
-        router.push('/admin');
       } else if (error.response?.status === 401) {
-        showNotification('error', 'Your session has expired. Please login again.');
-        router.push('/admin');
+        showNotification('error', 'Your session may have expired. Please refresh or login again.');
       } else {
         showNotification('error', error.message || 'Failed to load products. Please try again.');
       }
     } finally {
+      // Keep UI responsive: do not show blocking loader
       setIsLoadingProducts(false);
     }
   };
@@ -223,7 +220,6 @@ const ProductsPage = () => {
   const handleAddProduct = async () => {
     if (!validateForm()) return;
 
-    setIsLoading(true);
     try {
       const productData = {
         productName: formData.name,
@@ -243,25 +239,33 @@ const ProductsPage = () => {
       };
 
       const response = await adminProductService.addProduct(productData);
-      
-      // Reload products after successful add
-      await loadProducts();
-      
+
+      // Insert into list without full reload (fallback to refresh silently)
+      try {
+        const created = response.data || response.product || null;
+        if (created) {
+          const transformed = transformApiProduct(created);
+          setProducts(prev => [transformed, ...prev]);
+          setApiProducts(prev => [created as any, ...prev]);
+        } else {
+          loadProducts();
+        }
+      } catch {
+        loadProducts();
+      }
+
       setShowAddModal(false);
       resetForm();
       showNotification('success', response.message || 'Product added successfully!');
     } catch (error: any) {
       console.error('Failed to add product:', error);
       showNotification('error', error.response?.data || 'Failed to add product. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleEditProduct = async () => {
     if (!validateForm() || !selectedProduct) return;
 
-    setIsLoading(true);
     try {
       const productData = {
         productName: formData.name,
@@ -276,15 +280,25 @@ const ProductsPage = () => {
         L: formData.l,
         XL: formData.xl,
         XXL: formData.xxl,
-        // Include image file if new image uploaded
         image: formData.imageFile
       };
 
       const response = await adminProductService.updateProduct(parseInt(selectedProduct.id), productData);
-      
-      // Reload products after successful update
-      await loadProducts();
-      
+
+      // Update item in place without full reload
+      try {
+        const updated = response.data || response.product || null;
+        if (updated) {
+          const transformed = transformApiProduct(updated);
+          setProducts(prev => prev.map(p => p.id === transformed.id ? transformed : p));
+          setApiProducts(prev => prev.map((p: any) => p.id?.toString() === transformed.id ? updated as any : p));
+        } else {
+          loadProducts();
+        }
+      } catch {
+        loadProducts();
+      }
+
       setShowEditModal(false);
       setSelectedProduct(null);
       resetForm();
@@ -292,29 +306,34 @@ const ProductsPage = () => {
     } catch (error: any) {
       console.error('Failed to update product:', error);
       showNotification('error', error.response?.data || 'Failed to update product. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleDeleteProduct = async () => {
     if (!selectedProduct) return;
 
-    setIsLoading(true);
+    // Optimistic UI: remove immediately for snappy UX
+    const idNum = parseInt(selectedProduct.id);
+    const prevProducts = products;
+    const prevApiProducts = apiProducts;
+
+    setProducts(prev => prev.filter(p => p.id !== selectedProduct.id));
+    setLatestProducts(prev => prev.filter(p => p.id !== selectedProduct.id));
+    setApiProducts(prev => prev.filter((p: any) => p.id !== idNum));
+
     try {
-      const response = await adminProductService.deleteProduct(parseInt(selectedProduct.id));
-      
-      // Reload products after successful delete
-      await loadProducts();
-      
+      const response = await adminProductService.deleteProduct(idNum);
       setShowDeleteModal(false);
       setSelectedProduct(null);
       showNotification('success', response.message || 'Product deleted successfully!');
+      // Optionally refresh in background without showing loader
+      loadProducts();
     } catch (error: any) {
       console.error('Failed to delete product:', error);
-      showNotification('error', error.response?.data || 'Failed to delete product. Please try again.');
-    } finally {
-      setIsLoading(false);
+      // Revert on failure
+      setProducts(prevProducts);
+      setApiProducts(prevApiProducts);
+      showNotification('error', error?.response?.data || 'Failed to delete product. Please try again.');
     }
   };
 

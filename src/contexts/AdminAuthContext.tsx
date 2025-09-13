@@ -86,9 +86,10 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
     };
 
     const handleForbidden = (event: CustomEvent) => {
+      // Do not clear admin auth on 403 during CRUD. Just warn and keep session.
       console.error('Admin access forbidden:', event.detail.message);
-      setAdmin(null);
-      authStorage.clearAdminAuth();
+      // Intentionally not calling setAdmin(null) or clearing storage here
+      // Admin session will only be cleared on explicit logout or hard 401 handling
     };
 
     window.addEventListener('auth:logout', handleAuthLogout);

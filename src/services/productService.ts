@@ -141,18 +141,37 @@ export const productService = {
    */
   getProductsByCategory: async (category: string): Promise<Product[]> => {
     try {
-      // Map frontend category to backend category format
-      const backendCategory = category.replace('-', '').toLowerCase();
+      // Normalize frontend category to what backend expects
+      const toBackendCategory = (c: string) => {
+        const v = c.trim().toLowerCase();
+        if (v === 'hoodies' || v === 'hoodie') return 'Hoodie';
+        if (v === 't-shirts' || v === 'tshirt' || v === 'tshirts') return 't-shirts';
+        if (v === 'jeans' || v === 'jean') return 'jeans';
+        if (v === 'jackets' || v === 'jacket') return 'jackets';
+        if (v === 'shirts' || v === 'shirt') return 'shirts';
+        if (v === 'pants' || v === 'pant') return 'pants';
+        if (v === 'shorts' || v === 'short') return 'shorts';
+        if (v === 'sweaters' || v === 'sweater') return 'sweaters';
+        return c;
+      };
+
+      const desiredFrontendCategory = mapCategory(category);
+      const backendCategory = toBackendCategory(category);
+
       const response = await axios.get(`${API_URL}/public/getProductByCategory`, {
         params: { category: backendCategory }
       });
       const products: ApiProduct[] = response.data;
-      return products.map(transformProduct);
+      // Transform and ensure consistent frontend filtering
+      const transformed = products.map(transformProduct);
+      const filtered = transformed.filter(p => p.category === desiredFrontendCategory);
+      return filtered.length > 0 ? filtered : transformed;
     } catch (error: any) {
       console.error('Failed to fetch products by category:', error);
       // Fallback to filtering all products
       const allProducts = await productService.getAllProducts();
-      return allProducts.filter(p => p.category === category);
+      const desiredFrontendCategory = mapCategory(category);
+      return allProducts.filter(p => p.category === desiredFrontendCategory);
     }
   },
 
