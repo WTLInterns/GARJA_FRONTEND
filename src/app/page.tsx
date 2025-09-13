@@ -14,6 +14,7 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [latestProducts, setLatestProducts] = useState<Product[]>([]);
   const [tshirtProducts, setTshirtProducts] = useState<Product[]>([]);
+  const [hoodieProducts, setHoodieProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   const heroSlides = [
@@ -67,6 +68,9 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [heroSlides.length]);
 
+  // Format price helper
+  const formatPrice = (n: number) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(n));
+
   // Fetch products from API
   useEffect(() => {
     const fetchProducts = async () => {
@@ -79,6 +83,10 @@ export default function Home() {
         // Fetch t-shirt products
         const tshirts = await productService.getProductsByCategory('t-shirts');
         setTshirtProducts(tshirts.slice(0, 4)); // Get first 4 t-shirts
+
+        // Fetch hoodie products
+        const hoodies = await productService.getProductsByCategory('hoodies');
+        setHoodieProducts(hoodies.slice(0, 4)); // Get first 4 hoodies
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -193,71 +201,44 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Right Side - All 4 Images in One Line */}
+            {/* Right Side - Latest Products (dynamic) */}
             <div className="grid grid-cols-2 sm:flex gap-4 sm:gap-8 justify-center">
-              {/* Product 1 */}
-              <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                <div className="bg-white shadow-md overflow-hidden mb-2">
-                  <Image
-                    src="/images/newin1.jpg"
-                    alt="New Arrival 1"
-                    width={400}
-                    height={300}
-                    className="w-full h-48 sm:h-64 lg:h-80 object-cover"
-                  />
-                </div>
-                <p className="text-xs sm:text-sm font-medium text-black text-center">
-                  VALSTAR
-                </p>
-              </div>
-
-              {/* Product 2 */}
-              <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                <div className="bg-white shadow-md overflow-hidden mb-2">
-                  <Image
-                    src="/images/newin2.jpg"
-                    alt="New Arrival 2"
-                    width={400}
-                    height={300}
-                    className="w-full h-48 sm:h-64 lg:h-80 object-cover"
-                  />
-                </div>
-                <p className="text-xs sm:text-sm font-medium text-black text-center">
-                  CANALI
-                </p>
-              </div>
-
-              {/* Product 3 */}
-              <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                <div className="bg-white shadow-md overflow-hidden mb-2">
-                  <Image
-                    src="/images/newin3.jpg"
-                    alt="New Arrival 3"
-                    width={400}
-                    height={300}
-                    className="w-full h-48 sm:h-64 lg:h-80 object-cover"
-                  />
-                </div>
-                <p className="text-xs sm:text-sm font-medium text-black text-center">
-                  THE ROW
-                </p>
-              </div>
-
-              {/* Product 4 */}
-              <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                <div className="bg-white shadow-md overflow-hidden mb-2">
-                  <Image
-                    src="/images/newin4.jpg"
-                    alt="New Arrival 4"
-                    width={400}
-                    height={300}
-                    className="w-full h-48 sm:h-64 lg:h-80 object-cover"
-                  />
-                </div>
-                <p className="text-xs sm:text-sm font-medium text-black text-center">
-                  INCOTEX
-                </p>
-              </div>
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="w-40 sm:w-48">
+                    <div className="bg-gray-200 h-48 sm:h-64 lg:h-80 animate-pulse" />
+                    <div className="h-4 bg-gray-200 mt-2 w-3/4 mx-auto animate-pulse" />
+                  </div>
+                ))
+              ) : latestProducts.length > 0 ? (
+                latestProducts.map((product) => (
+                  <Link key={product.id} href={`/product/${product.id}`} className="group cursor-pointer hover:scale-105 transition-all duration-300 w-40 sm:w-48">
+                    <div className="bg-white shadow-md overflow-hidden mb-2 border border-gray-200">
+                      <Image
+                        src={product.images[0] || '/images/placeholder.jpg'}
+                        alt={product.name}
+                        width={400}
+                        height={300}
+                        className="w-full h-48 sm:h-64 lg:h-80 object-cover"
+                      />
+                    </div>
+                    <p className="text-xs sm:text-sm font-medium text-black text-center truncate px-2">
+                      {product.name}
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-gray-700 text-center">₹{formatPrice(product.price)}</p>
+                  </Link>
+                ))
+              ) : (
+                // Fallback static thumbnails
+                ['newin1','newin2','newin3','newin4'].map((img, idx) => (
+                  <div key={idx} className="group cursor-pointer hover:scale-105 transition-all duration-300 w-40 sm:w-48">
+                    <div className="bg-white shadow-md overflow-hidden mb-2">
+                      <Image src={`/images/${img}.jpg`} alt={`New Arrival ${idx+1}`} width={400} height={300} className="w-full h-48 sm:h-64 lg:h-80 object-cover" />
+                    </div>
+                    <p className="text-xs sm:text-sm font-medium text-black text-center">New Arrival</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -434,11 +415,7 @@ export default function Home() {
                                 height={400}
                                 className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
                               />
-                              {product.originalPrice && (
-                                <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                                  {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                                </div>
-                              )}
+                             
                             </div>
                             <div className="mt-3 sm:mt-4 text-center">
                               <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2 truncate px-2">
@@ -446,11 +423,11 @@ export default function Home() {
                               </h3>
                               <div className="flex items-center justify-center gap-2">
                                 <p className="text-xs sm:text-sm text-gray-900 font-bold">
-                                  ₹{product.price}
+                                  ₹{formatPrice(product.price)}
                                 </p>
                                 {product.originalPrice && (
                                   <p className="text-xs sm:text-sm text-gray-500 line-through">
-                                    ₹{product.originalPrice}
+                                    ₹{formatPrice(product.originalPrice)}
                                   </p>
                                 )}
                               </div>
@@ -637,91 +614,62 @@ export default function Home() {
                     </div>
                   </div>
                   
-                  {/* Hoodie Product Grid - Using available images */}
+                  {/* Hoodie Product Grid - Dynamic data from API */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                    {/* Hoodie 1 */}
-                    <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                      <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                        <Image
-                          src="/images/hoodie1.jpg"
-                          alt="Hoodie"
-                          width={300}
-                          height={400}
-                          className="w-full h-96 object-cover hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="mt-4 text-center">
-                        <h3 className="text-lg font-semibold text-black mb-2">
-                          Oversized Hoodie
-                        </h3>
-                        <p className="text-sm text-gray-600 font-medium">
-                          From ₹899
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Hoodie 2 */}
-                    <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                      <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                        <Image
-                          src="/images/hoodie2.jpg"
-                          alt="Classic Hoodie"
-                          width={300}
-                          height={400}
-                          className="w-full h-96 object-cover hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="mt-4 text-center">
-                        <h3 className="text-lg font-semibold text-black mb-2">
-                          Classic Hoodie
-                        </h3>
-                        <p className="text-sm text-gray-600 font-medium">
-                          From ₹799
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Hoodie 3 */}
-                    <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                      <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                        <Image
-                          src="/images/hoodie3.jpg"
-                          alt="Premium Hoodie"
-                          width={300}
-                          height={400}
-                          className="w-full h-96 object-cover hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="mt-4 text-center">
-                        <h3 className="text-lg font-semibold text-black mb-2">
-                          Premium Hoodie
-                        </h3>
-                        <p className="text-sm text-gray-600 font-medium">
-                          From ₹999
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Hoodie 4 */}
-                    <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                      <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                        <Image
-                          src="/images/hoodie4.jpg"
-                          alt="Designer Hoodie"
-                          width={300}
-                          height={400}
-                          className="w-full h-96 object-cover hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <div className="mt-4 text-center">
-                        <h3 className="text-lg font-semibold text-black mb-2">
-                          Designer Hoodie
-                        </h3>
-                        <p className="text-sm text-gray-600 font-medium">
-                          From ₹1199
-                        </p>
-                      </div>
-                    </div>
+                    {loading ? (
+                      Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="animate-pulse">
+                          <div className="bg-gray-200 rounded-xl h-96"></div>
+                          <div className="mt-3 space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                          </div>
+                        </div>
+                      ))
+                    ) : hoodieProducts.length > 0 ? (
+                      hoodieProducts.map((product) => (
+                        <Link key={product.id} href={`/product/${product.id}`}>
+                          <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
+                            <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
+                              <Image
+                                src={product.images[0] || '/images/hoodie.jpg'}
+                                alt={product.name}
+                                width={300}
+                                height={400}
+                                className="w-full h-96 object-cover hover:scale-110 transition-transform duration-500"
+                              />
+                            </div>
+                            <div className="mt-4 text-center">
+                              <h3 className="text-lg font-semibold text-black mb-2 truncate px-2">
+                                {product.name}
+                              </h3>
+                              <div className="flex items-center justify-center gap-2">
+                                <p className="text-sm text-gray-900 font-bold">₹{formatPrice(product.price)}</p>
+                                {product.originalPrice && (
+                                  <p className="text-sm text-gray-500 line-through">₹{formatPrice(product.originalPrice)}</p>
+                                )}
+                              </div>
+                              {!product.inStock && (
+                                <p className="text-xs text-red-500 mt-1">Out of Stock</p>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      // Fallback static content
+                      ['hoodie1','hoodie2','hoodie3','hoodie4'].map((img, idx) => (
+                        <div key={idx} className="group cursor-pointer hover:scale-105 transition-all duration-300">
+                          <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
+                            <Image src={`/images/${img}.jpg`} alt={`Hoodie ${idx+1}`} width={300} height={400} className="w-full h-96 object-cover hover:scale-110 transition-transform duration-500" />
+                          </div>
+                          <div className="mt-4 text-center">
+                            <h3 className="text-lg font-semibold text-black mb-2">Premium Hoodie</h3>
+                            <p className="text-sm text-gray-600 font-medium">From ₹899</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </section>
