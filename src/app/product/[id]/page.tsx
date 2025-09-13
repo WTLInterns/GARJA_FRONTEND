@@ -9,6 +9,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { wishlistService } from '@/services/wishlistService';
+import { orderService } from '@/services/orderService';
 
 const ProductDetailPage: React.FC = () => {
   const params = useParams();
@@ -23,6 +25,8 @@ const ProductDetailPage: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wlLoading, setWlLoading] = useState(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -56,6 +60,22 @@ const ProductDetailPage: React.FC = () => {
     loadProduct();
   }, [params.id]);
 
+  useEffect(() => {
+    const initWishlist = async () => {
+      try {
+        if (!user || !product) {
+          setIsWishlisted(false);
+          return;
+        }
+        const inWl = await wishlistService.isProductInWishlist(Number(product.id));
+        setIsWishlisted(inWl);
+      } catch (e) {
+        console.warn('[Wishlist] init failed:', e);
+      }
+    };
+    initWishlist();
+  }, [user, product?.id]);
+
   const handleAddToCart = () => {
     if (!user) {
       router.push('/?login=true&redirect=' + encodeURIComponent(window.location.pathname));
@@ -68,16 +88,46 @@ const ProductDetailPage: React.FC = () => {
     openCart();
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!user) {
-      router.push('/?login=true&redirect=' + encodeURIComponent('/checkout'));
+      router.push('/?login=true&redirect=' + encodeURIComponent(window.location.pathname));
       return;
     }
-    
     if (!product) return;
-    
-    addItem(product, quantity, selectedSize, selectedColor);
-    router.push('/checkout');
+    try {
+      // Call Buy Now API directly
+      const order = await orderService.buyNow({
+        productId: Number(product.id),
+        quantity,
+        size: selectedSize || (product.sizes[0] || 'M'),
+      });
+      console.log('[Order] Buy Now success:', order);
+      // Navigate to orders page on success
+      router.push('/user/orders');
+    } catch (e) {
+      console.error('[Order] Buy Now failed:', e);
+      alert((e as any)?.message || 'Failed to place order');
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    try {
+      if (!user) {
+        router.push('/?login=true&redirect=' + encodeURIComponent(window.location.pathname));
+        return;
+      }
+      if (!product) return;
+      setWlLoading(true);
+      console.log('[Wishlist] toggling for product', product.id);
+      const res = await wishlistService.toggleWishlist(Number(product.id));
+      console.log('[Wishlist] toggle result:', res);
+      setIsWishlisted(res.action === 'added');
+    } catch (e) {
+      console.error('[Wishlist] toggle error:', e);
+      alert((e as any)?.message || 'Failed to update wishlist');
+    } finally {
+      setWlLoading(false);
+    }
   };
 
   if (loading) {
@@ -124,6 +174,20 @@ const ProductDetailPage: React.FC = () => {
           </Link>
           <span>/</span>
           <span className="text-gray-900">{product.name}</span>
+          {user && (
+            <button
+              onClick={handleToggleWishlist}
+              className={`ml-2 ${isWishlisted ? 'text-red-600' : 'text-gray-600'} hover:text-red-600 transition-colors`}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 001.5 1.94l.322.388l.387.322l.94-.94L15.178 13V19a2 2 0 001.848 2H18a2 2 0 001.847-2V8a2 2 0 00-2-2h-6.172a2 2 0 00-.75-1.661l-.94.94l-.387-.323L10.23 4H5a2 2 0 00-2 2v2a5 5 0 005 5zm.28 4.146a.5.5 0 00.708-.708L8.5 8.793 7.646 7.85 6.354 9H5.5a.5.5 0 00-.5.5v2a.5.5 0 00.5.5H7v.5a.5.5 0 00.5.5h.793l.646.646a.5.5 0 00.708-.708l-1.5-1.5z" />
+              </svg>
+            </button>
+          )}
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

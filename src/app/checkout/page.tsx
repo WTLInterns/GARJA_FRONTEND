@@ -12,11 +12,7 @@ import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 import SuccessNotification from '@/components/SuccessNotification';
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+ 
 
 const CheckoutPage: React.FC = () => {
   const { state, clearCart } = useCart();
@@ -40,7 +36,7 @@ const CheckoutPage: React.FC = () => {
     country: 'India'
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'cod'>('razorpay');
+  const [paymentMethod, setPaymentMethod] = useState<'cod'>('cod');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Partial<ShippingAddress>>({});
 
@@ -59,19 +55,7 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Load Razorpay script only when user is authenticated
-    if (user) {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-
-      return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
-      };
-    }
+    // No third-party payment script needed (COD only)
   }, [user, isAuthLoading, state.items.length, router]);
 
   const handleAuthModalClose = () => {
@@ -162,72 +146,28 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  const createOrder = async () => {
-    try {
-      const response = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: finalTotal,
-          currency: 'INR',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create order');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating order:', error);
-      throw error;
-    }
-  };
-
-const handleRazorpayPayment = async () => {
-  try {
-    setIsProcessing(true);
-
-    // For now, directly call the API checkout without Razorpay
-    const order = await orderService.checkout();
-
-    setSuccessMessage(order.message || 'Order placed successfully!');
-    setShowSuccess(true);
-    await clearCart();
-    setTimeout(() => {
-      router.push('/user/orders');
-    }, 1500);
-  } catch (error) {
-    console.error('Error placing order:', error);
-    alert('Error placing order. Please try again.');
-  } finally {
-    setIsProcessing(false);
-  }
-};
-
   const handleCODOrder = async () => {
     try {
       setIsProcessing(true);
 
-      // Simulate order creation for COD
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create order via backend API for COD as well
+      const order = await orderService.checkout();
 
       // Show success message toast
-      setSuccessMessage('Order placed successfully! Your order will be delivered soon.');
+      setSuccessMessage(order.message || 'Order placed successfully!');
       setShowSuccess(true);
 
       // Clear cart
-      clearCart();
+      await clearCart();
 
-      // Redirect to home page after short delay
+      // Redirect to orders page after short delay
       setTimeout(() => {
-        router.push('/');
+        router.push('/user/orders');
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error placing COD order:', error);
-      alert('Error placing order. Please try again.');
+      alert(error?.message || 'Error placing order. Please try again.');
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -239,11 +179,7 @@ const handleRazorpayPayment = async () => {
       return;
     }
 
-    if (paymentMethod === 'razorpay') {
-      await handleRazorpayPayment();
-    } else {
-      await handleCODOrder();
-    }
+    await handleCODOrder();
   };
 
 
@@ -373,38 +309,12 @@ const handleRazorpayPayment = async () => {
 
               {/* Payment Method */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Payment Method</h2>
-
-                <div className="space-y-4">
-                  <div className="flex items-center">
-                    <input
-                      id="razorpay"
-                      name="payment-method"
-                      type="radio"
-                      value="razorpay"
-                      checked={paymentMethod === 'razorpay'}
-                      onChange={(e) => setPaymentMethod(e.target.value as 'razorpay')}
-                      className="h-4 w-4 text-black focus:ring-black border-gray-300"
-                    />
-                    <label htmlFor="razorpay" className="ml-3 block text-sm font-medium text-gray-700">
-                      Online Payment (Cards, UPI, Net Banking)
-                    </label>
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      id="cod"
-                      name="payment-method"
-                      type="radio"
-                      value="cod"
-                      checked={paymentMethod === 'cod'}
-                      onChange={(e) => setPaymentMethod(e.target.value as 'cod')}
-                      className="h-4 w-4 text-black focus:ring-black border-gray-300"
-                    />
-                    <label htmlFor="cod" className="ml-3 block text-sm font-medium text-gray-700">
-                      Cash on Delivery
-                    </label>
-                  </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Payment Method</h2>
+                <p className="text-sm text-gray-600">Only Cash on Delivery (COD) is available at the moment.</p>
+                <div className="mt-4 flex items-center">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm font-medium">
+                    COD
+                  </span>
                 </div>
               </div>
             </div>

@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
+import { wishlistService } from '@/services/wishlistService';
 
 interface ProductCardProps {
   product: Product;
@@ -21,6 +22,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAuthRequired }) =>
   const { user } = useAuth();
   const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
   const [selectedColor, setSelectedColor] = useState(product.colors[0]);
+  const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
+  const [wlLoading, setWlLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Initialize wishlist state from backend if authenticated
+    const init = async () => {
+      try {
+        if (!user) {
+          setIsWishlisted(false);
+          return;
+        }
+        const inWl = await wishlistService.isProductInWishlist(Number(product.id));
+        setIsWishlisted(inWl);
+      } catch (e) {
+        console.warn('[Wishlist] init failed:', e);
+      }
+    };
+    init();
+  }, [user, product.id]);
 
   const handleAddToCart = () => {
     if (!user) {
@@ -36,9 +56,51 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAuthRequired }) =>
     addItem(product, 1, selectedSize, selectedColor);
   };
 
+  const handleToggleWishlist = async () => {
+    try {
+      if (!user) {
+        // Reuse auth handler if provided, else redirect to login
+        if (onAuthRequired) {
+          onAuthRequired(product, selectedSize, selectedColor);
+        } else {
+          window.location.href = '/?login=true&redirect=' + encodeURIComponent(window.location.pathname);
+        }
+        return;
+      }
+      setWlLoading(true);
+      console.log('[Wishlist] toggling for product', product.id);
+      const res = await wishlistService.toggleWishlist(Number(product.id));
+      console.log('[Wishlist] toggle result:', res);
+      setIsWishlisted(res.action === 'added');
+    } catch (e) {
+      console.error('[Wishlist] toggle error:', e);
+      alert((e as any)?.message || 'Failed to update wishlist');
+    } finally {
+      setWlLoading(false);
+    }
+  };
+
   return (
     
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300 relative">
+      {/* Wishlist Heart */}
+      <button
+        aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+        title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+        onClick={handleToggleWishlist}
+        disabled={wlLoading}
+        className={`absolute top-3 right-3 z-10 rounded-full p-2 backdrop-blur bg-white/70 hover:bg-white transition ${wlLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+      >
+        <svg
+          className={`w-5 h-5 ${isWishlisted ? 'text-red-600' : 'text-gray-600'}`}
+          viewBox="0 0 24 24"
+          fill={isWishlisted ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+        </svg>
+      </button>
       <Link href={`/product/${product.id}`}>
         <div className="aspect-square overflow-hidden">
           <img

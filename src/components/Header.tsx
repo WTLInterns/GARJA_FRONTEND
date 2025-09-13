@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import AuthModal from './AuthModal';
 import UserDropdown from './UserDropdown';
 import CartSidebar from './CartSidebar';
+import Link from 'next/link'; // ✅ added for Wishlist
 
 const Header = () => {
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
@@ -26,11 +27,11 @@ const Header = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setIsFading(true); // Start fade-out
+      setIsFading(true); 
       setTimeout(() => {
         setCurrentAnnouncement((prev) => (prev + 1) % announcements.length);
-        setIsFading(false); // Start fade-in
-      }, 500); // Half of the transition duration
+        setIsFading(false); 
+      }, 500); 
     }, 3500);
 
     return () => clearInterval(interval);
@@ -96,68 +97,66 @@ const Header = () => {
               </svg>
             </button>
 
-         {/* Left - Authentication Section (Hidden on mobile) */}
-<div className="hidden md:flex items-center">
-  {isAuthenticated ? (
-    <UserDropdown />
-  ) : (
-    <div className="flex items-center space-x-4">
-      {/* Login */}
-      <div
-        onClick={handleLoginClick}
-        className="flex items-center space-x-1 cursor-pointer group hover:scale-105 transition-all duration-200"
-      >
-        <svg
-          className="w-4 h-4 text-gray-800 group-hover:text-gray-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          {/* Login Icon → Arrow into a door */}
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 
-               2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 
-               21h6a2.25 2.25 0 002.25-2.25V15M12 9l3 3m0 
-               0l-3 3m3-3H3"
-          />
-        </svg>
-        <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
-          Login
-        </span>
-      </div>
+            {/* Left - Authentication Section (Hidden on mobile) */}
+            <div className="hidden md:flex items-center">
+              {isAuthenticated ? (
+                <UserDropdown />
+              ) : (
+                <div className="flex items-center space-x-4">
+                  {/* Login */}
+                  <div
+                    onClick={handleLoginClick}
+                    className="flex items-center space-x-1 cursor-pointer group hover:scale-105 transition-all duration-200"
+                  >
+                    <svg
+                      className="w-4 h-4 text-gray-800 group-hover:text-gray-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 
+                           2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 
+                           21h6a2.25 2.25 0 002.25-2.25V15M12 9l3 3m0 
+                           0l-3 3m3-3H3"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
+                      Login
+                    </span>
+                  </div>
 
-      {/* Sign Up */}
-      <div
-        onClick={handleSignupClick}
-        className="flex items-center space-x-1 cursor-pointer group hover:scale-105 transition-all duration-200"
-      >
-        <svg
-          className="w-4 h-4 text-gray-800 group-hover:text-gray-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          {/* Sign Up Icon → User with plus */}
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 
-               3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 
-               1115 0v.75H4.5v-.75zM18 9v3m0 0v3m0-3h3m-3 
-               0h-3"
-          />
-        </svg>
-        <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
-          Sign Up
-        </span>
-      </div>
-    </div>
-  )}
-</div>
+                  {/* Sign Up */}
+                  <div
+                    onClick={handleSignupClick}
+                    className="flex items-center space-x-1 cursor-pointer group hover:scale-105 transition-all duration-200"
+                  >
+                    <svg
+                      className="w-4 h-4 text-gray-800 group-hover:text-gray-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 
+                           3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 
+                           1115 0v.75H4.5v-.75zM18 9v3m0 0v3m0-3h3m-3 
+                           0h-3"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
+                      Sign Up
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Center - Premium Logo */}
             <div 
@@ -169,7 +168,7 @@ const Header = () => {
               </h1>
             </div>
 
-            {/* Right - Navigation Icons */}
+            {/* Right - Navigation Icons + Page Links */}
             <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-8">
               <button className="hidden sm:flex items-center space-x-2 text-black hover:text-gray-700 transition-all duration-200 cursor-pointer group hover:scale-105">
                 <div className="p-2 rounded-full group-hover:bg-gray-100 transition-all duration-200">
@@ -180,11 +179,15 @@ const Header = () => {
                 <span className="text-sm font-medium hidden md:inline">Search</span>
               </button>
               
-              <button className="p-2 rounded-full text-black hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 cursor-pointer group hover:scale-105">
+              {/* ✅ Fixed Wishlist Button */}
+              <Link
+                href="/wishlist"
+                className="p-2 rounded-full text-black hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 cursor-pointer group hover:scale-105"
+              >
                 <svg className="w-5 h-5 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
-              </button>
+              </Link>
               
               <button
                 onClick={toggleCart}
@@ -308,12 +311,10 @@ const Header = () => {
       </div>
 
       {/* Authentication Modal */}
-      {/* Pass noOverlay to AuthModal to show modal without dark overlay for a more professional look */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={handleAuthModalClose}
         initialMode={authModalMode}
-        
       />
 
       {/* Cart Sidebar */}
@@ -326,5 +327,3 @@ const Header = () => {
 };
 
 export default Header;
-
-

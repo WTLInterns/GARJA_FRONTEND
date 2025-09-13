@@ -424,7 +424,7 @@ export default function Home() {
                     ) : tshirtProducts.length > 0 ? (
                       // Display real products
                       tshirtProducts.map((product) => (
-                        <Link key={product.id} href={`/products/${product.id}`}>
+                        <Link key={product.id} href={`/product/${product.id}`}>
                           <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
                             <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
                               <Image

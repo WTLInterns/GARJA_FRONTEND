@@ -83,7 +83,7 @@ const ProductsPage = () => {
       price: parseFloat(apiProduct.price),
       stock: apiProduct.quantity,
       status: isActive ? 'active' : 'inactive',
-      image: apiProduct.imageUrl || '/images/placeholder.jpg',
+      image: apiProduct.imageUrl,
       createdAt: apiProduct.date
     };
   };
@@ -463,7 +463,7 @@ const ProductsPage = () => {
               <div key={product.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
                 {/* Product Image */}
                 <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                  {product.image && product.image !== '/images/placeholder.jpg' ? (
+                  {product.image && product.image ? (
                     <img
                       src={product.image}
                       alt={product.name}

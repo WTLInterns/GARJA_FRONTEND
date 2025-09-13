@@ -4,14 +4,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
 
 // Wishlist interfaces based on API response
 export interface WishlistItem {
-  id: number;
-  userId: number;
+  id: number;           // maps from id or wishlistId
+  userId?: number;      // optional depending on API
   productId: number;
   productName: string;
-  price: string;
-  imageUrl: string;
-  category: string;
-  dateAdded: string;
+  price: string;        // maps from price or productPrice
+  imageUrl: string;     // maps from imageUrl or productImage
+  category?: string;    // optional
+  dateAdded: string;    // provide fallback if not present
 }
 
 class WishlistService {
@@ -102,7 +102,28 @@ class WishlistService {
         `${API_URL}/user/wishlist/user/${userId}`,
         { headers }
       );
-      return response.data;
+      const data = Array.isArray(response.data) ? response.data : [];
+      // Normalize different possible shapes into WishlistItem
+      const normalized: WishlistItem[] = data.map((raw: any) => {
+        const id = Number(raw.id ?? raw.wishlistId);
+        const productId = Number(raw.productId);
+        const productName = String(raw.productName ?? raw.name ?? '');
+        const imageUrl = String(raw.imageUrl ?? raw.productImage ?? '');
+        const priceStr = String(raw.price ?? raw.productPrice ?? '0');
+        const category = raw.category ? String(raw.category) : undefined;
+        const dateAdded = raw.dateAdded ? String(raw.dateAdded) : new Date().toISOString();
+        return {
+          id,
+          userId: raw.userId ? Number(raw.userId) : undefined,
+          productId,
+          productName,
+          imageUrl,
+          price: priceStr,
+          category,
+          dateAdded,
+        } as WishlistItem;
+      });
+      return normalized;
     } catch (error: any) {
       console.error('Error fetching wishlist:', error);
       if (error.response?.status === 401) {
@@ -126,6 +147,8 @@ class WishlistService {
       return false;
     }
   }
+
+  
 
   // Get wishlist count
   async getWishlistCount(): Promise<number> {

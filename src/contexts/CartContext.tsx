@@ -1,9 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { CartItem, Product } from '@/types/product';
 import SuccessNotification from '@/components/SuccessNotification';
-import { cartService, Cart as BackendCart, CartItem as BackendCartItem } from '@/services/cartService';
+import { cartService, Cart as BackendCart } from '@/services/cartService';
+import { productService } from '@/services/productService';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface CartState {
@@ -25,7 +26,8 @@ type CartAction =
   | { type: 'CLOSE_CART' }
   | { type: 'LOAD_CART'; payload: CartItem[] }
   | { type: 'SHOW_SUCCESS'; payload: string }
-  | { type: 'HIDE_SUCCESS' };
+  | { type: 'HIDE_SUCCESS' }
+  | { type: 'SET_TOTALS'; payload: { totalItems: number; totalAmount: number } };
 
 interface CartContextType {
   state: CartState;
@@ -157,6 +159,15 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
     }
 
+    case 'SET_TOTALS': {
+      const { totalItems, totalAmount } = action.payload;
+      return {
+        ...state,
+        totalItems,
+        totalAmount,
+      };
+    }
+
     case 'SHOW_SUCCESS':
       return {
         ...state,
@@ -187,39 +198,147 @@ const initialState: CartState = {
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const { isAuthenticated } = useAuth();
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('garja-cart');
-    if (savedCart) {
+  // Helper: transform backend cart to frontend items
+  const mapBackendCartToFrontend = async (backendCart: BackendCart): Promise<CartItem[]> => {
+    const items: CartItem[] = [];
+    for (const bi of backendCart.items) {
       try {
-        const cartItems = JSON.parse(savedCart);
-        dispatch({ type: 'LOAD_CART', payload: cartItems });
-      } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
+        const prod = await productService.getProductById(String(bi.productId));
+        const product: Product = prod || {
+          id: String(bi.productId),
+          name: bi.productName,
+          price: parseFloat(String(bi.price).replace(/[^0-9.]/g, '')) || 0,
+          originalPrice: undefined,
+          description: '',
+          category: 't-shirts',
+          images: [bi.imageUrl],
+          sizes: ['XS','M','L','XL','XXL'],
+          colors: ['Black','White','Gray'],
+          inStock: bi.isActive === 'true',
+          stockQuantity: 0,
+          rating: 4.5,
+          reviewCount: 0,
+          tags: [bi.category],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        items.push({
+          id: `${bi.id}`,
+          product,
+          quantity: bi.quantity,
+          selectedSize: bi.size || (product.sizes[0] || 'M'),
+          selectedColor: product.colors[0] || 'Black',
+          addedAt: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.warn('Failed to map backend cart item:', bi, e);
       }
     }
-  }, []);
+    return items;
+  };
 
-  // Save cart to localStorage whenever it changes
+  // Load cart from backend on mount/auth change
   useEffect(() => {
-    localStorage.setItem('garja-cart', JSON.stringify(state.items));
-  }, [state.items]);
+    const loadCart = async () => {
+      if (!isAuthenticated) {
+        console.log('[Cart] User not authenticated; skipping backend cart load');
+        dispatch({ type: 'LOAD_CART', payload: [] });
+        return;
+      }
+      try {
+        console.log('[Cart] Loading cart from backend...');
+        const backend = await cartService.getCart();
+        if (!backend) {
+          console.log('[Cart] No cart found on backend');
+          dispatch({ type: 'LOAD_CART', payload: [] });
+          return;
+        }
+        const items = await mapBackendCartToFrontend(backend);
+        dispatch({ type: 'LOAD_CART', payload: items });
+        console.log('[Cart] Loaded cart:', backend);
+      } catch (error) {
+        console.error('[Cart] Error loading cart from backend:', error);
+        dispatch({ type: 'LOAD_CART', payload: [] });
+      }
+    };
+    loadCart();
+  }, [isAuthenticated]);
 
-  const addItem = (product: Product, quantity: number, selectedSize: string, selectedColor: string) => {
-    dispatch({ type: 'ADD_ITEM', payload: { product, quantity, selectedSize, selectedColor } });
+  // Helper to refresh cart from backend after mutation
+  const refreshCart = async () => {
+    try {
+      const backend = await cartService.getCart();
+      if (backend) {
+        const items = await mapBackendCartToFrontend(backend);
+        dispatch({ type: 'LOAD_CART', payload: items });
+      } else {
+        dispatch({ type: 'LOAD_CART', payload: [] });
+      }
+    } catch (e) {
+      console.error('[Cart] Failed to refresh cart:', e);
+    }
   };
 
-  const removeItem = (id: string) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: id });
+  const addItem = async (product: Product, quantity: number, selectedSize: string, selectedColor: string) => {
+    try {
+      console.log('[Cart] addItem →', { productId: product.id, quantity, selectedSize, selectedColor });
+      const added = await cartService.addToCart(Number(product.id), quantity);
+      console.log('[Cart] addItem response:', added);
+      try {
+        if (selectedSize) {
+          const sized = await cartService.updateSize(Number(product.id), selectedSize);
+          console.log('[Cart] updateSize response:', sized);
+        }
+      } catch (e) {
+        console.warn('[Cart] updateSize failed or unsupported:', e);
+      }
+      await refreshCart();
+      dispatch({ type: 'SHOW_SUCCESS', payload: `${product.name} added to cart successfully!` });
+    } catch (e: any) {
+      console.error('[Cart] addItem error:', e);
+      dispatch({ type: 'SHOW_SUCCESS', payload: e.message || 'Failed to add to cart' });
+      setTimeout(() => dispatch({ type: 'HIDE_SUCCESS' }), 1500);
+    }
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+  const removeItem = async (id: string) => {
+    try {
+      const item = state.items.find(i => i.id === id);
+      if (!item) return;
+      console.log('[Cart] removeItem →', { productId: item.product.id });
+      const res = await cartService.removeFromCart(Number(item.product.id));
+      console.log('[Cart] removeItem response:', res);
+      await refreshCart();
+    } catch (e) {
+      console.error('[Cart] removeItem error:', e);
+    }
   };
 
-  const clearCart = () => {
-    dispatch({ type: 'CLEAR_CART' });
+  const updateQuantity = async (id: string, quantity: number) => {
+    try {
+      const item = state.items.find(i => i.id === id);
+      if (!item) return;
+      console.log('[Cart] updateQuantity →', { productId: item.product.id, quantity });
+      const res = await cartService.updateQuantity(Number(item.product.id), quantity);
+      console.log('[Cart] updateQuantity response:', res);
+      await refreshCart();
+    } catch (e) {
+      console.error('[Cart] updateQuantity error:', e);
+    }
+  };
+
+  const clearCart = async () => {
+    try {
+      console.log('[Cart] clearCart → calling API');
+      const res = await cartService.clearCart();
+      console.log('[Cart] clearCart response:', res);
+      await refreshCart();
+    } catch (e) {
+      console.error('[Cart] clearCart error:', e);
+    }
   };
 
   const toggleCart = () => {

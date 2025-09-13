@@ -10,11 +10,17 @@ export interface ApiProduct {
   quantity: number;
   isActive: string;  // Changed from boolean to string based on API docs
   description: string;
-  XS?: string;  // Changed to uppercase based on API docs
+  XS?: string;  // some backends send uppercase
   M?: string;
   L?: string;
   XL?: string;
   XXL?: string;
+  // also support lowercase keys
+  xs?: string | null;
+  m?: string | null;
+  l?: string | null;
+  xl?: string | null;
+  xxl?: string | null;
   imageUrl: string;
   imagePublicId?: string;
   category: string;
@@ -32,6 +38,7 @@ const mapCategory = (apiCategory: string): Product['category'] => {
     'apparel': 't-shirts',
     't-shirt': 't-shirts',
     't-shirts': 't-shirts',
+    'tshirts': 't-shirts',
     'hoodie': 'hoodies',
     'hoodies': 'hoodies',
     'shirt': 'shirts',
@@ -56,11 +63,16 @@ const mapCategory = (apiCategory: string): Product['category'] => {
 const transformProduct = (apiProduct: ApiProduct): Product => {
   // Extract available sizes based on stock
   const sizes: string[] = [];
-  if (apiProduct.XS && parseInt(apiProduct.XS) > 0) sizes.push('XS');
-  if (apiProduct.M && parseInt(apiProduct.M) > 0) sizes.push('M');
-  if (apiProduct.L && parseInt(apiProduct.L) > 0) sizes.push('L');
-  if (apiProduct.XL && parseInt(apiProduct.XL) > 0) sizes.push('XL');
-  if (apiProduct.XXL && parseInt(apiProduct.XXL) > 0) sizes.push('XXL');
+  const hasQty = (v?: string | null) => {
+    if (v === null || v === undefined) return false;
+    const n = parseInt(String(v));
+    return !isNaN(n) && n > 0;
+  };
+  if (hasQty(apiProduct.XS) || hasQty(apiProduct.xs)) sizes.push('XS');
+  if (hasQty(apiProduct.M) || hasQty(apiProduct.m)) sizes.push('M');
+  if (hasQty(apiProduct.L) || hasQty(apiProduct.l)) sizes.push('L');
+  if (hasQty(apiProduct.XL) || hasQty(apiProduct.xl)) sizes.push('XL');
+  if (hasQty(apiProduct.XXL) || hasQty(apiProduct.xxl)) sizes.push('XXL');
   
   // If no sizes are specified, default to common sizes
   if (sizes.length === 0) {
@@ -68,7 +80,7 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
   }
 
   // Parse price (remove any non-numeric characters)
-  const price = parseFloat(apiProduct.price.replace(/[^0-9.]/g, ''));
+  const price = parseFloat(String(apiProduct.price).replace(/[^0-9.]/g, ''));
   
   // Generate random original price for discount display (optional)
   const originalPrice = Math.random() > 0.5 ? price * 1.2 : undefined;
@@ -80,7 +92,7 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
   const tags = [
     apiProduct.category,
     'new-arrival',
-    apiProduct.isActive === 'true' ? 'in-stock' : 'out-of-stock'
+    (apiProduct.isActive === 'true' || apiProduct.isActive === '1') ? 'in-stock' : 'out-of-stock'
   ];
   
   const createdAt = apiProduct.date && apiProduct.time ? `${apiProduct.date} ${apiProduct.time}` : new Date().toISOString();
@@ -95,7 +107,7 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
     images: apiProduct.imageUrl ? [apiProduct.imageUrl] : ['/images/placeholder.jpg'],
     sizes: sizes,
     colors: colors,
-    inStock: apiProduct.isActive === 'true' && apiProduct.quantity > 0,
+    inStock: (apiProduct.isActive === 'true' || apiProduct.isActive === '1') && apiProduct.quantity > 0,
     stockQuantity: apiProduct.quantity,
     rating: 4.5, // Default rating since API doesn't provide it
     reviewCount: apiProduct.reviews?.length || 0,
