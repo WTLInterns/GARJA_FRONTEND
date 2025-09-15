@@ -12,6 +12,8 @@ interface Product {
   name: string;
   description: string;
   category: string;
+  originalPrice: string;
+  discount:string
   price: number;
   stock: number;
   status: 'active' | 'inactive';
@@ -25,6 +27,8 @@ interface ProductFormData {
   category: string;
   price: string;
   stock: string;
+  originalPrice: string;
+  discount:string
   isActive: boolean;  // Changed to boolean for API
   imageFile: File | null;  // Actual file for upload
   imagePreview: string;     // Preview URL for display
@@ -57,6 +61,8 @@ const ProductsPage = () => {
     stock: '',
     isActive: true,  // Default to active (will send "1" to API)
     imageFile: null,
+    originalPrice:'',
+    discount:'',
     imagePreview: '',
     xs: '0',
     m: '0',
@@ -81,6 +87,8 @@ const ProductsPage = () => {
       description: apiProduct.description,
       category: apiProduct.category,
       price: parseFloat(apiProduct.price),
+      originalPrice: apiProduct.originalPrice,
+      discount:apiProduct.discount,
       stock: apiProduct.quantity,
       status: isActive ? 'active' : 'inactive',
       image: apiProduct.imageUrl,
@@ -174,6 +182,17 @@ const ProductsPage = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // Calculate discount percentage string from original and current price
+  const calculateDiscount = (original: string, price: string): string => {
+    const op = parseFloat(original);
+    const p = parseFloat(price);
+    if (!isFinite(op) || !isFinite(p) || op <= 0) return '';
+    const pct = ((op - p) / op) * 100;
+    // Clamp between 0 and 100 and format to 0 decimals
+    const clamped = Math.max(0, Math.min(100, pct));
+    return clamped.toFixed(0);
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -181,12 +200,15 @@ const ProductsPage = () => {
       category: '',
       price: '',
       stock: '',
+      originalPrice:'',
+      discount:'',
       isActive: true,
       imageFile: null,
       imagePreview: '',
       xs: '0',
       m: '0',
       l: '0',
+
       xl: '0',
       xxl: '0'
     });
@@ -221,6 +243,7 @@ const ProductsPage = () => {
     if (!validateForm()) return;
 
     try {
+      setIsLoading(true);
       const productData = {
         productName: formData.name,
         price: formData.price,
@@ -228,6 +251,8 @@ const ProductsPage = () => {
         isActive: formData.isActive ? "1" : "0",  // Convert boolean to "1" or "0" string
         description: formData.description,
         category: formData.category,
+        originalPrice: formData.originalPrice,
+        discount: formData.discount,
         // Size quantities from form (convert to string or number as needed by API)
         XS: formData.xs,
         M: formData.m,
@@ -260,6 +285,8 @@ const ProductsPage = () => {
     } catch (error: any) {
       console.error('Failed to add product:', error);
       showNotification('error', error.response?.data || 'Failed to add product. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -267,6 +294,7 @@ const ProductsPage = () => {
     if (!validateForm() || !selectedProduct) return;
 
     try {
+      setIsLoading(true);
       const productData = {
         productName: formData.name,
         price: formData.price,
@@ -274,6 +302,8 @@ const ProductsPage = () => {
         isActive: formData.isActive ? "1" : "0",  // Convert boolean to "1" or "0" string
         description: formData.description,
         category: formData.category,
+        originalPrice: formData.originalPrice,
+        discount: formData.discount,
         // Size quantities from form (convert to string or number as needed by API)
         XS: formData.xs,
         M: formData.m,
@@ -306,6 +336,8 @@ const ProductsPage = () => {
     } catch (error: any) {
       console.error('Failed to update product:', error);
       showNotification('error', error.response?.data || 'Failed to update product. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -341,6 +373,10 @@ const ProductsPage = () => {
     setSelectedProduct(product);
     // Find the corresponding API product to get size data
     const apiProduct: any = apiProducts.find(p => p.id.toString() === product.id);
+    const existingOriginal = ((product.originalPrice as any) ?? (apiProduct?.originalPrice as any) ?? '') as string;
+    const priceStr = product.price.toString();
+    const existingDiscount = ((product.discount as any) ?? (apiProduct?.discount as any) ?? '') as string;
+    const derivedDiscount = existingDiscount || (existingOriginal ? calculateDiscount(existingOriginal, priceStr) : '');
     
     setFormData({
       name: product.name,
@@ -350,6 +386,8 @@ const ProductsPage = () => {
       stock: product.stock.toString(),
       isActive: product.status === 'active',
       imageFile: null,
+      originalPrice: product.originalPrice,
+      discount: product.discount,
       imagePreview: product.image,
       // Parse size quantities or default to '0' - API returns lowercase field names
       xs: apiProduct?.xs || '0',
@@ -668,11 +706,35 @@ const ProductsPage = () => {
                   <input
                     type="number"
                     value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value, discount: calculateDiscount(prev.originalPrice, e.target.value) }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                     placeholder="0.00"
                     min="0"
                     step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Original Price (₹) *</label>
+                  <input
+                    type="number"
+                    value={formData.originalPrice}
+                    onChange={(e) => setFormData(prev => ({ ...prev, originalPrice: e.target.value, discount: calculateDiscount(e.target.value, prev.price) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Discount (%)</label>
+                  <input
+                    type="number"
+                    value={formData.discount}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-black focus:border-black"
+                    placeholder="0"
+                    min="0"
+                    step="1"
                   />
                 </div>
 
@@ -894,11 +956,35 @@ const ProductsPage = () => {
                   <input
                     type="number"
                     value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value, discount: calculateDiscount(prev.originalPrice, e.target.value) }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                     placeholder="0.00"
                     min="0"
                     step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Original Price (₹) *</label>
+                  <input
+                    type="number"
+                    value={formData.originalPrice}
+                    onChange={(e) => setFormData(prev => ({ ...prev, originalPrice: e.target.value, discount: calculateDiscount(e.target.value, prev.price) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Discount (%)</label>
+                  <input
+                    type="number"
+                    value={formData.discount}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                    placeholder="0"
+                    min="0"
+                    step="1"
                   />
                 </div>
 

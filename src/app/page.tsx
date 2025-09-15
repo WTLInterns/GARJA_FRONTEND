@@ -70,6 +70,14 @@ export default function Home() {
 
   // Format price helper
   const formatPrice = (n: number) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(n));
+  const getDiscountPercent = (price?: number, originalPrice?: number, existing?: number) => {
+    if (typeof existing === 'number' && isFinite(existing)) return existing;
+    if (typeof price === 'number' && typeof originalPrice === 'number' && isFinite(price) && isFinite(originalPrice) && originalPrice > 0) {
+      const pct = Math.max(0, Math.min(100, ((originalPrice - price) / originalPrice) * 100));
+      return Math.round(pct);
+    }
+    return undefined;
+  };
 
   // Fetch products from API
   useEffect(() => {
@@ -225,7 +233,19 @@ export default function Home() {
                     <p className="text-xs sm:text-sm font-medium text-black text-center truncate px-2">
                       {product.name}
                     </p>
-                    <p className="text-[11px] sm:text-xs text-gray-700 text-center">₹{formatPrice(product.price)}</p>
+                    <div className="flex items-center justify-center gap-2 mt-1">
+                      <span className="text-[11px] sm:text-xs text-gray-900 font-bold">₹{formatPrice(product.price)}</span>
+                      {typeof product.originalPrice === 'number' && (
+                        <span className="text-[11px] sm:text-xs text-red-500 line-through">₹{formatPrice(product.originalPrice)}</span>
+                      )}
+                      {(() => {
+                        const pct = getDiscountPercent(product.price, product.originalPrice, (product as any).discountPercent);
+                        return typeof pct === 'number' && pct > 0 ? (
+                          <span className="text-[10px] sm:text-[11px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded font-semibold">{pct}% off</span>
+                        ) : null;
+                      })()}
+                    </div>
+
                   </Link>
                 ))
               ) : (
@@ -415,21 +435,23 @@ export default function Home() {
                                 height={400}
                                 className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
                               />
-                             
+                              
                             </div>
                             <div className="mt-3 sm:mt-4 text-center">
                               <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2 truncate px-2">
                                 {product.name}
                               </h3>
                               <div className="flex items-center justify-center gap-2">
-                                <p className="text-xs sm:text-sm text-gray-900 font-bold">
-                                  ₹{formatPrice(product.price)}
-                                </p>
-                                {product.originalPrice && (
-                                  <p className="text-xs sm:text-sm text-gray-500 line-through">
-                                    ₹{formatPrice(product.originalPrice)}
-                                  </p>
+                                <span className="text-xs sm:text-sm text-gray-900 font-bold">₹{formatPrice(product.price)}</span>
+                                {typeof product.originalPrice === 'number' && (
+                                  <span className="text-xs sm:text-sm text-red-500 line-through">₹{formatPrice(product.originalPrice)}</span>
                                 )}
+                                {(() => {
+                                  const pct = getDiscountPercent(product.price, product.originalPrice, (product as any).discountPercent);
+                                  return typeof pct === 'number' && pct > 0 ? (
+                                    <span className="text-[10px] sm:text-[11px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded font-semibold">{pct}% off</span>
+                                  ) : null;
+                                })()}
                               </div>
                               {!product.inStock && (
                                 <p className="text-xs text-red-500 mt-1">Out of Stock</p>
@@ -626,7 +648,7 @@ export default function Home() {
                           </div>
                         </div>
                       ))
-                    ) : hoodieProducts.length > 0 ?
+                    ) : hoodieProducts.length > 0 ? (
                     
                     
                     
@@ -647,93 +669,6 @@ export default function Home() {
                     
                     
                     
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    (
                       hoodieProducts.map((product) => (
                         <Link key={product.id} href={`/product/${product.id}`}>
                           <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
@@ -751,10 +686,16 @@ export default function Home() {
                                 {product.name}
                               </h3>
                               <div className="flex items-center justify-center gap-2">
-                                <p className="text-sm text-gray-900 font-bold">₹{formatPrice(product.price)}</p>
-                                {product.originalPrice && (
-                                  <p className="text-sm text-gray-500 line-through">₹{formatPrice(product.originalPrice)}</p>
+                                <span className="text-sm text-gray-900 font-bold">₹{formatPrice(product.price)}</span>
+                                {typeof product.originalPrice === 'number' && (
+                                  <span className="text-sm text-red-500 line-through">₹{formatPrice(product.originalPrice)}</span>
                                 )}
+                                {(() => {
+                                  const pct = getDiscountPercent(product.price, product.originalPrice, (product as any).discountPercent);
+                                  return typeof pct === 'number' && pct > 0 ? (
+                                    <span className="text-[11px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded font-semibold">{pct}% off</span>
+                                  ) : null;
+                                })()}
                               </div>
                               {!product.inStock && (
                                 <p className="text-xs text-red-500 mt-1">Out of Stock</p>

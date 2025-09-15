@@ -9,6 +9,8 @@ export interface Product {
   quantity: number;
   isActive: string; // Backend returns "1" or "0" as strings
   description: string;
+  originalPrice?: string;
+  discount?: string;
   xs?: string;
   m?: string;
   l?: string;
@@ -29,6 +31,8 @@ export interface ProductFormData {
   quantity: number;
   isActive?: boolean | string;  // Accept both boolean (from UI) and string ("1" or "0")
   description: string;
+  originalPrice?: string;
+  discount?: string; // percentage string
   XS?: string;
   M?: string;
   L?: string;
@@ -123,6 +127,13 @@ export const adminProductService = {
       formData.append('quantity', productData.quantity.toString());
       formData.append('description', productData.description);
       formData.append('category', productData.category);
+      // Optional pricing metadata
+      if (productData.originalPrice !== undefined) {
+        formData.append('originalPrice', productData.originalPrice);
+      }
+      if (productData.discount !== undefined) {
+        formData.append('discount', productData.discount);
+      }
       
       if (productData.isActive !== undefined) {
         formData.append('isActive', productData.isActive.toString());

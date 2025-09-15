@@ -4,6 +4,7 @@ export interface Product {
   description: string;
   price: number;
   originalPrice?: number;
+  discountPercent?: number;
   category: 't-shirts' | 'hoodies' | 'shirts' | 'jackets' | 'pants' | 'jeans' | 'shorts' | 'sweaters';
   images: string[];
   sizes: string[];

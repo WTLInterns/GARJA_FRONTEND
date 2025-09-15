@@ -37,9 +37,6 @@ export interface LoginData {
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085',
   timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Request interceptor to add auth token
@@ -133,20 +130,14 @@ export const apiService = {
   // Admin product endpoints
   admin: {
     addProduct: async (formData: FormData) => {
-      const response = await api.post('/admin/addProduct', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Do not set Content-Type manually; the browser will add the correct boundary
+      const response = await api.post('/admin/addProduct', formData);
       return response.data;
     },
 
     updateProduct: async (id: number, formData: FormData) => {
-      const response = await api.put(`/admin/updateProduct/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Do not set Content-Type manually; the browser will add the correct boundary
+      const response = await api.put(`/admin/updateProduct/${id}`, formData);
       return response.data;
     },
 
@@ -180,12 +171,14 @@ export const apiService = {
   },
 
   post: async <T = any>(url: string, data?: any): Promise<T> => {
-    const response = await api.post(url, data);
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const response = await api.post(url, data, isFormData ? undefined : { headers: { 'Content-Type': 'application/json' } });
     return response.data;
   },
 
   put: async <T = any>(url: string, data?: any): Promise<T> => {
-    const response = await api.put(url, data);
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const response = await api.put(url, data, isFormData ? undefined : { headers: { 'Content-Type': 'application/json' } });
     return response.data;
   },
 

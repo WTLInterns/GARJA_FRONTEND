@@ -9,7 +9,9 @@ export interface ApiProduct {
   price: string;
   quantity: number;
   isActive: string;  // Changed from boolean to string based on API docs
-  description: string;
+  description: string | null;
+  originalPrice?: string | number | null;
+  discount?: string | number | null; // percent string or number
   XS?: string;  // some backends send uppercase
   M?: string;
   L?: string;
@@ -81,9 +83,21 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
 
   // Parse price (remove any non-numeric characters)
   const price = parseFloat(String(apiProduct.price).replace(/[^0-9.]/g, ''));
-  
-  // Generate random original price for discount display (optional)
-  const originalPrice = Math.random() > 0.5 ? price * 1.2 : undefined;
+  // Parse original price if provided by backend
+  const parsedOriginal = apiProduct.originalPrice !== undefined && apiProduct.originalPrice !== null
+    ? parseFloat(String(apiProduct.originalPrice).replace(/[^0-9.]/g, ''))
+    : undefined;
+  const originalPrice = isFinite(parsedOriginal as number) && (parsedOriginal as number) > 0 ? (parsedOriginal as number) : undefined;
+  // Determine discount percent from backend or compute from prices
+  const parsedBackendDiscount = apiProduct.discount !== undefined && apiProduct.discount !== null
+    ? parseFloat(String(apiProduct.discount).replace(/[^0-9.]/g, ''))
+    : undefined;
+  const computedDiscount = originalPrice && isFinite(price) && originalPrice > 0
+    ? Math.max(0, Math.min(100, ((originalPrice - price) / originalPrice) * 100))
+    : undefined;
+  const discountPercent = isFinite(parsedBackendDiscount as number)
+    ? (parsedBackendDiscount as number)
+    : (computedDiscount !== undefined ? Math.round(computedDiscount) : undefined);
   
   // Default colors (since API doesn't provide colors)
   const colors = ['Black', 'White', 'Navy', 'Gray'];
@@ -102,7 +116,8 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
     name: apiProduct.productName,
     price: price,
     originalPrice: originalPrice,
-    description: apiProduct.description,
+    discountPercent: discountPercent,
+    description: apiProduct.description || '',
     category: mapCategory(apiProduct.category),
     images: apiProduct.imageUrl ? [apiProduct.imageUrl] : ['/images/placeholder.jpg'],
     sizes: sizes,
@@ -183,6 +198,7 @@ export const productService = {
     try {
       const response = await axios.get(`${API_URL}/public/getLatestProducts`);
       const products: ApiProduct[] = response.data;
+      console.log(products);
       return products.map(transformProduct);
     } catch (error: any) {
       console.error('Error fetching latest products:', error);
