@@ -173,7 +173,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
                 {state.items.map((item) => (
                   <div key={item.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 relative">
                         <Image
                           src={item.product.images[0]}
                           alt={item.product.name}
@@ -181,6 +181,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
                           height={64}
                           className="w-16 h-16 object-cover rounded border border-gray-200"
                         />
+                        {typeof item.product.originalPrice === 'number' && (
+                          <span className="absolute -top-2 -left-2 text-[10px] px-2 py-0.5 rounded-full bg-green-600 text-white shadow">
+                            {Math.max(0, Math.round(((item.product.originalPrice - item.product.price) / item.product.originalPrice) * 100))}% OFF
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -190,25 +195,33 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
                               {item.product.name}
                             </h3>
                           </Link>
-                          {/* Inline quantity stepper (Amazon-like) */}
-                          <div className="flex items-center border border-gray-300 rounded-md">
+                          {/* Optional short description */}
+                          {item.product.description && (
+                            <p className="mt-1 text-xs text-gray-600 line-clamp-2">
+                              {item.product.description}
+                            </p>
+                          )}
+                          {/* Inline quantity stepper */}
+                          <div className="flex items-center border border-gray-300 rounded-full overflow-hidden">
                             <button
                               onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                              className="px-2 py-1 hover:bg-gray-50 transition-colors"
+                              className="w-8 h-8 grid place-items-center hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               disabled={item.quantity <= 1}
                               aria-label="Decrease quantity"
+                              title={item.quantity <= 1 ? 'Minimum quantity reached' : 'Decrease quantity'}
                             >
-                              −
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/></svg>
                             </button>
                             <span className="px-2 text-sm min-w-[2rem] text-center font-medium">
                               {item.quantity}
                             </span>
                             <button
                               onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                              className="px-2 py-1 hover:bg-gray-50 transition-colors"
+                              className="w-8 h-8 grid place-items-center hover:bg-gray-50 transition-colors"
                               aria-label="Increase quantity"
+                              title="Increase quantity"
                             >
-                              +
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                             </button>
                           </div>
                         </div>
@@ -218,24 +231,33 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onAuthRequired }) => {
                           <span className="bg-gray-100 px-2 py-0.5 rounded">{item.selectedColor}</span>
                         </div>
 
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="text-sm">
-                            <span className="font-semibold text-gray-900">
-                              ₹{(item.product.price * item.quantity).toLocaleString()}
-                            </span>
-                            {item.quantity > 1 && (
-                              <span className="text-gray-600 ml-1">
-                                (₹{item.product.price.toLocaleString()} each)
-                              </span>
-                            )}
+                        <div className="mt-2 flex items-start justify-between">
+                          <div className="text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900">₹{item.product.price.toLocaleString()}</span>
+                              {typeof item.product.originalPrice === 'number' && (
+                                <>
+                                  <span className="text-red-500 line-through">₹{item.product.originalPrice.toLocaleString()}</span>
+                                  <span className="text-[10px] font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                                    {Math.max(0, Math.round(((item.product.originalPrice - item.product.price) / item.product.originalPrice) * 100))}% OFF
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            {/* {item.quantity > 1 && (
+                              <span className="text-gray-600">(₹{item.product.price.toLocaleString()} each)</span>
+                            )} */}
                           </div>
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            className="text-red-600 hover:text-red-800 text-xs font-medium underline transition-colors"
-                            title="Remove item"
-                          >
-                            Remove
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => removeItem(item.id)}
+                              className="text-red-600 hover:text-red-800"
+                              aria-label="Remove item"
+                              title="Remove item"
+                            >
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

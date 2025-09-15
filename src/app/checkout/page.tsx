@@ -46,7 +46,7 @@ const CheckoutPage: React.FC = () => {
   });
 
   // Only online payment via Razorpay
-  const [paymentMethod] = useState<'razorpay'>('razorpay');
+  const [paymentMethod, setPaymentMethod] = useState<'razorpay'>('razorpay');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Partial<ShippingAddress>>({});
   const [savedAddress, setSavedAddress] = useState<ShippingAddress | null>(null);
@@ -413,9 +413,8 @@ const CheckoutPage: React.FC = () => {
                         type="text"
                         value={shippingAddress.fullName}
                         onChange={(e) => handleInputChange('fullName', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-black ${errors.fullName ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        placeholder="Enter your full name"
+                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.fullName ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="e.g., Rohan Sharma"
                       />
                       {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
                     </div>
@@ -428,9 +427,8 @@ const CheckoutPage: React.FC = () => {
                         type="tel"
                         value={shippingAddress.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-black ${errors.phone ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        placeholder="Enter your phone number"
+                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="e.g., 98765 43210"
                       />
                       {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                     </div>
@@ -444,9 +442,8 @@ const CheckoutPage: React.FC = () => {
                       type="text"
                       value={shippingAddress.addressLine1}
                       onChange={(e) => handleInputChange('addressLine1', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-black ${errors.addressLine1 ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      placeholder="House number, street name"
+                      className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.addressLine1 ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="House no., Street name"
                     />
                     {errors.addressLine1 && <p className="text-red-500 text-sm mt-1">{errors.addressLine1}</p>}
                   </div>
@@ -459,7 +456,7 @@ const CheckoutPage: React.FC = () => {
                       type="text"
                       value={shippingAddress.addressLine2}
                       onChange={(e) => handleInputChange('addressLine2', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black"
                       placeholder="Apartment, suite, etc. (optional)"
                     />
                   </div>
@@ -473,8 +470,7 @@ const CheckoutPage: React.FC = () => {
                         type="text"
                         value={shippingAddress.city}
                         onChange={(e) => handleInputChange('city', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-black ${errors.city ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="City"
                       />
                       {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
@@ -488,8 +484,7 @@ const CheckoutPage: React.FC = () => {
                         type="text"
                         value={shippingAddress.state}
                         onChange={(e) => handleInputChange('state', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-black ${errors.state ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.state ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="State"
                       />
                       {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
@@ -503,8 +498,7 @@ const CheckoutPage: React.FC = () => {
                         type="text"
                         value={shippingAddress.zipCode}
                         onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-black focus:border-black ${errors.zipCode ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="ZIP Code"
                       />
                       {errors.zipCode && <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>}
@@ -516,15 +510,34 @@ const CheckoutPage: React.FC = () => {
 
               {/* Payment Method - Only Online Payment */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Payment Method</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Method</h2>
                 {!razorpayLoaded && (
                   <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-sm text-yellow-800">Loading payment options...</p>
                   </div>
                 )}
-                <div className="flex items-center">
-                  <div className="h-4 w-4 rounded-full bg-black mr-3"></div>
-                  <span className="text-sm font-medium text-gray-700">Online Payment (Cards, UPI, Net Banking, Wallets)</span>
+                <div className="space-y-3 w-full" role="radiogroup" aria-label="Payment Method">
+                  <label className={`w-full flex flex-col sm:flex-row sm:items-center items-start justify-between p-4 border rounded-xl hover:border-gray-400 cursor-pointer gap-3 ${paymentMethod === 'razorpay' ? 'border-black ring-1 ring-black/10' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="razorpay"
+                        checked={paymentMethod === 'razorpay'}
+                        onChange={() => setPaymentMethod('razorpay')}
+                        className="h-4 w-4 text-black border-gray-300 focus:ring-black"
+                        aria-checked={paymentMethod === 'razorpay'}
+                      />
+                      <span className="text-sm font-medium text-gray-900">Online Payment</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">UPI</span>
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Cards</span>
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Netbanking</span>
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Wallets</span>
+                    </div>
+                  </label>
+                  <p className="text-xs text-gray-500 sm:ml-9">Secured by Razorpay</p>
                 </div>
               </div>
             </div>
@@ -541,9 +554,9 @@ const CheckoutPage: React.FC = () => {
                       <div key={item.id} className="flex items-center space-x-3">
                         <Link href={`/product/${item.product.id}`} className="flex-shrink-0">
                           <img
-                            src={item.product.images}
+                            src={Array.isArray(item.product.images) ? item.product.images[0] : (item.product.images as any)}
                             alt={item.product.name}
-                            className="w-12 h-12 object-cover rounded hover:opacity-90 transition"
+                            className="w-14 h-14 object-cover rounded-lg hover:opacity-90 transition"
                           />
                         </Link>
                         <div className="flex-1 min-w-0">
@@ -552,9 +565,21 @@ const CheckoutPage: React.FC = () => {
                               {item.product.name}
                             </p>
                           </Link>
-                          <p className="text-xs text-gray-500">
-                            {item.selectedSize} • {item.selectedColor} • Qty: {item.quantity}
-                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">Size: {item.selectedSize}</span>
+                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">Qty: {item.quantity}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900">₹{item.product.price.toLocaleString()}</span>
+                            {typeof item.product.originalPrice === 'number' && (
+                              <>
+                                <span className="text-xs text-red-500 line-through">₹{item.product.originalPrice.toLocaleString()}</span>
+                                <span className="text-[10px] font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                                  {Math.max(0, Math.round(((item.product.originalPrice - item.product.price) / item.product.originalPrice) * 100))}% OFF
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm font-medium text-gray-900">
                           ₹{(item.product.price * item.quantity).toLocaleString()}
@@ -592,22 +617,35 @@ const CheckoutPage: React.FC = () => {
                         <span className="text-lg font-semibold text-gray-900">₹{finalTotal.toLocaleString()}</span>
                       </div>
                     </div>
+
+                    <div className="mt-4 flex items-center gap-2">
+                      <input className="flex-1 px-4 py-2 border border-gray-300 rounded-xl bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black" placeholder="Apply coupon code" />
+                      <button className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50">Apply</button>
+                    </div>
+
                   </div>
 
                   <button
                     onClick={handleSubmit}
                     disabled={isProcessing || !razorpayLoaded}
-                    className="w-full mt-6 bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-6 h-14 rounded-full bg-[#fdd835] text-gray-900 font-semibold border border-yellow-300 shadow-md hover:bg-[#fbc02d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                    aria-label={isProcessing ? 'Processing payment' : `Pay now ₹${finalTotal.toLocaleString()}`}
                   >
                     {isProcessing ? (
                       <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 mr-2"></div>
                         Processing...
                       </div>
                     ) : !razorpayLoaded ? (
                       'Loading Payment Options...'
                     ) : (
-                      `Pay Now - ₹${finalTotal.toLocaleString()}`
+                      <>
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 7h20v10H2z" />
+                          <path d="M2 11h20" />
+                        </svg>
+                        <span>Pay Now - ₹{finalTotal.toLocaleString()}</span>
+                      </>
                     )}
                   </button>
                 </div>
@@ -617,6 +655,33 @@ const CheckoutPage: React.FC = () => {
         </div>
       </div>
       <Footer />
+
+      {/* Sticky mobile CTA */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+        <button
+          onClick={handleSubmit}
+          disabled={isProcessing || !razorpayLoaded}
+          className="w-full h-14 rounded-full bg-[#fdd835] text-gray-900 font-semibold border border-yellow-300 shadow-md hover:bg-[#fbc02d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+          aria-label={isProcessing ? 'Processing payment' : `Pay now ₹${finalTotal.toLocaleString()}`}
+        >
+          {isProcessing ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 mr-2"></div>
+              Processing...
+            </div>
+          ) : !razorpayLoaded ? (
+            'Loading Payment Options...'
+          ) : (
+            <>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 7h20v10H2z" />
+                <path d="M2 11h20" />
+              </svg>
+              <span>Pay Now - ₹{finalTotal.toLocaleString()}</span>
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Success Notification */}
       <SuccessNotification

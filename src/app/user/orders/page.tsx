@@ -87,6 +87,14 @@ const OrderHistoryPage: React.FC = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Order History</h1>
             <p className="text-gray-600 mt-2">Track and manage your orders</p>
+            {/* Quick filters (UI-only) */}
+            {orders.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {['All','Pending','Confirmed','Processing','Shipped','Delivered','Cancelled'].map(tag => (
+                  <button key={tag} className="px-3 py-1 rounded-full border border-gray-300 text-sm text-gray-700 hover:bg-gray-100">{tag}</button>
+                ))}
+              </div>
+            )}
           </div>
 
           {error && (
@@ -120,69 +128,48 @@ const OrderHistoryPage: React.FC = () => {
           ) : (
             <div className="space-y-6">
               {orders.map((order) => (
-                <div key={order.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                  <div className="p-6">
-                    {/* Order Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Order #{order.id}
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Placed on {formatDate(order.orderDate)}
-                        </p>
-                      </div>
-                      <div className="mt-2 sm:mt-0">
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeColor(order.status)}`}>
+                <div key={order.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                  {/* Header */}
+                  <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-semibold text-gray-900">Order #{order.id}</h3>
+                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(order.status)}`}>
                           {orderService.formatOrderStatus(order.status)}
                         </span>
                       </div>
+                      <p className="text-sm text-gray-600">Placed on {formatDate(order.orderDate)}</p>
                     </div>
-
-                    {/* Order Details */}
-                    <div className="border-t pt-4">
-                      <div className="flex items-start space-x-4">
-                        {order.image && (
-                          <img
-                            src={order.image}
-                            alt={order.productName}
-                            className="w-20 h-20 object-cover rounded-lg"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{order.productName}</h4>
-                          <div className="mt-1 text-sm text-gray-600 space-y-1">
-                            <p>Quantity: {order.quantity}</p>
-                            {order.size && <p>Size: {order.size}</p>}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold text-gray-900">
-                            ₹{order.totalAmount.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Order Actions */}
-                    <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                      <div className="mb-3 sm:mb-0">
-                        {order.message && (
-                          <p className="text-sm text-green-600 font-medium">{order.message}</p>
-                        )}
-                      </div>
-                      <div className="flex space-x-3">
-                        <button
-                          onClick={() => setSelectedOrder(order)}
-                          className="text-sm font-medium text-gray-700 hover:text-gray-900 underline underline-offset-2"
-                        >
-                          View Details
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="h-10 px-4 rounded-full border border-gray-300 bg-white hover:bg-gray-50 text-sm font-medium"
+                      >
+                        View Details
+                      </button>
+                      {order.status === 'DELIVERED' && (
+                        <button className="h-10 px-4 rounded-full bg-black text-white hover:bg-gray-800 text-sm font-medium">
+                          Write Review
                         </button>
-                        {order.status === 'DELIVERED' && (
-                          <button className="text-sm font-medium text-black hover:text-gray-700 underline underline-offset-2">
-                            Write Review
-                          </button>
-                        )}
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="px-5 pb-5">
+                    <div className="flex items-start gap-4">
+                      {order.image && (
+                        <img src={order.image} alt={order.productName} className="w-20 h-20 object-cover rounded-lg border" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 line-clamp-2">{order.productName}</h4>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                          <span className="px-2 py-0.5 rounded-full bg-gray-100">Qty: {order.quantity}</span>
+                          {order.size && <span className="px-2 py-0.5 rounded-full bg-gray-100">Size: {order.size}</span>}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold text-gray-900">₹{order.totalAmount.toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
@@ -221,31 +208,33 @@ const OrderHistoryPage: React.FC = () => {
       {/* Order Detail Modal */}
       {selectedOrder && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={() => setSelectedOrder(null)}
         >
           <div 
-            className="bg-white rounded-lg max-w-lg w-full p-6"
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Order Details #{selectedOrder.id}
-              </h3>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Order Details #{selectedOrder.id}</h3>
+                <p className="text-sm text-gray-600">Placed on {formatDate(selectedOrder.orderDate)}</p>
+              </div>
+              <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
             <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600">Order Date</p>
-                <p className="font-medium">{formatDate(selectedOrder.orderDate)}</p>
+              <div className="flex items-start gap-3">
+                {selectedOrder.image && (
+                  <img src={selectedOrder.image} alt={selectedOrder.productName} className="w-16 h-16 object-cover rounded" />
+                )}
+                <div>
+                  <p className="font-medium">{selectedOrder.productName}</p>
+                  <p className="text-sm text-gray-600">Quantity: {selectedOrder.quantity}</p>
+                  {selectedOrder.size && <p className="text-sm text-gray-600">Size: {selectedOrder.size}</p>}
+                </div>
               </div>
 
               <div>
@@ -253,26 +242,6 @@ const OrderHistoryPage: React.FC = () => {
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeColor(selectedOrder.status)}`}>
                   {orderService.formatOrderStatus(selectedOrder.status)}
                 </span>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-600">Product</p>
-                <div className="flex items-start space-x-3 mt-2">
-                  {selectedOrder.image && (
-                    <img
-                      src={selectedOrder.image}
-                      alt={selectedOrder.productName}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                  )}
-                  <div>
-                    <p className="font-medium">{selectedOrder.productName}</p>
-                    <p className="text-sm text-gray-600">Quantity: {selectedOrder.quantity}</p>
-                    {selectedOrder.size && (
-                      <p className="text-sm text-gray-600">Size: {selectedOrder.size}</p>
-                    )}
-                  </div>
-                </div>
               </div>
 
               <div>
@@ -287,12 +256,10 @@ const OrderHistoryPage: React.FC = () => {
               )}
             </div>
 
-            <button
-              onClick={() => setSelectedOrder(null)}
-              className="w-full mt-6 bg-black text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium"
-            >
-              Close
-            </button>
+            <div className="mt-6 flex gap-3">
+              <button onClick={() => setSelectedOrder(null)} className="flex-1 h-10 rounded-full border border-gray-300 bg-white hover:bg-gray-50 text-sm font-medium">Close</button>
+              <button className="flex-1 h-10 rounded-full bg-black text-white hover:bg-gray-800 text-sm font-medium">Support</button>
+            </div>
           </div>
         </div>
       )}

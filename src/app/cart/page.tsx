@@ -24,6 +24,11 @@ const CartPage: React.FC = () => {
     }
   };
 
+  const handleRemove = (itemId: string, productName?: string) => {
+    const ok = window.confirm(`Remove ${productName || 'this item'} from cart?`);
+    if (ok) removeItem(itemId);
+  };
+
   const handleCheckout = () => {
     if (!user) {
       setAuthModalMode('login');
@@ -97,80 +102,115 @@ const CartPage: React.FC = () => {
             {/* Cart Items */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">
                     Cart Items ({state.totalItems})
                   </h2>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     {state.items.map((item) => (
-                      <div key={item.id} className="flex items-center space-x-4 pb-6 border-b border-gray-200 last:border-b-0 last:pb-0">
-                        <div className="flex-shrink-0">
-                          <img
-                            src={item.product.images[0]}
-                            alt={item.product.name}
-                            className="w-20 h-20 object-cover rounded-lg"
-                          />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
+                      <div key={item.id} className="grid grid-cols-[88px_1fr] sm:grid-cols-[96px_1fr_auto] gap-3 sm:gap-4 pb-4 sm:pb-5 border-b border-gray-200 last:border-b-0 last:pb-0">
+                        <Link href={`/product/${item.product.id}`} className="block relative">
+                          <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-lg overflow-hidden bg-gray-100">
+                            <img
+                              src={Array.isArray(item.product.images) ? item.product.images[0] : (item.product.images as any)}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          {item.product.originalPrice && (
+                            <span className="absolute -top-2 -left-2 text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-green-600 text-white shadow">
+                              {Math.max(0, Math.round(((item.product.originalPrice as number - item.product.price) / (item.product.originalPrice as number)) * 100))}% OFF
+                            </span>
+                          )}
+                        </Link>
+
+                        <div className="min-w-0">
                           <Link href={`/product/${item.product.id}`}>
-                            <h3 className="text-lg font-medium text-gray-900 hover:text-gray-700 transition-colors">
+                            <h3 className="text-base sm:text-lg font-medium text-gray-900 hover:text-gray-700 transition-colors line-clamp-2">
                               {item.product.name}
                             </h3>
                           </Link>
-                          <div className="mt-1 text-sm text-gray-600">
-                            <span>Size: {item.selectedSize}</span>
-                            <span className="mx-2">•</span>
-                            <span>Color: {item.selectedColor}</span>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100">Size: {item.selectedSize}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100">Qty: {item.quantity}</span>
                           </div>
-                          <div className="mt-2 flex items-center space-x-4">
-                            <span className="text-lg font-semibold text-gray-900">
-                              ₹{item.product.price}
-                            </span>
+                          <div className="mt-2 flex items-center gap-3">
+                            <span className="text-lg font-semibold text-gray-900">₹{item.product.price.toLocaleString()}</span>
                             {item.product.originalPrice && (
-                              <span className="text-sm text-gray-500 line-through">
-                                ₹{item.product.originalPrice}
+                              <span className="text-sm text-red-500 line-through">₹{(item.product.originalPrice as number).toLocaleString()}</span>
+                            )}
+                            {item.product.originalPrice && (
+                              <span className="text-green-700 bg-green-100 text-xs font-semibold px-2 py-0.5 rounded">
+                                {Math.max(0, Math.round(((item.product.originalPrice as number - item.product.price) / (item.product.originalPrice as number)) * 100))}% OFF
                               </span>
                             )}
                           </div>
+                          {item.product.originalPrice && (
+                            <div className="text-xs text-green-700 mt-1">
+                              You save ₹{((item.product.originalPrice as number - item.product.price) * item.quantity).toLocaleString()}
+                            </div>
+                          )}
+                          {/* Mobile controls */}
+                          <div className="mt-3 flex sm:hidden items-center justify-between">
+                            <div className="flex items-center border border-gray-300 rounded-full overflow-hidden">
+                              <button
+                                aria-label="Decrease quantity"
+                                onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                                disabled={item.quantity <= 1}
+                                className="w-10 h-10 grid place-items-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={item.quantity <= 1 ? 'Minimum quantity reached' : 'Decrease quantity'}
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/></svg>
+                              </button>
+                              <span className="w-12 text-center">{item.quantity}</span>
+                              <button
+                                aria-label="Increase quantity"
+                                onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                className="w-10 h-10 grid place-items-center hover:bg-gray-50"
+                                title="Increase quantity"
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                              </button>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-semibold text-gray-900 mb-1">₹{(item.product.price * item.quantity).toLocaleString()}</div>
+                              <button onClick={() => handleRemove(item.id, item.product.name)} className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium">
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                                Remove
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center border border-gray-300 rounded-lg">
+
+                        {/* Desktop controls and line total */}
+                        <div className="hidden sm:flex sm:flex-col sm:items-end sm:justify-between">
+                          <div className="flex items-center border border-gray-300 rounded-full overflow-hidden">
                             <button
+                              aria-label="Decrease quantity"
                               onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                              className="p-2 hover:bg-gray-50 rounded-l-lg"
+                              disabled={item.quantity <= 1}
+                              className="w-10 h-10 grid place-items-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={item.quantity <= 1 ? 'Minimum quantity reached' : 'Decrease quantity'}
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                              </svg>
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/></svg>
                             </button>
-                            <span className="px-4 py-2 text-center min-w-[3rem]">{item.quantity}</span>
+                            <span className="w-12 text-center">{item.quantity}</span>
                             <button
+                              aria-label="Increase quantity"
                               onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                              className="p-2 hover:bg-gray-50 rounded-r-lg"
+                              className="w-10 h-10 grid place-items-center hover:bg-gray-50"
+                              title="Increase quantity"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                              </svg>
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                             </button>
                           </div>
-                          
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            className="text-red-600 hover:text-red-800 p-2"
-                            title="Remove item"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        <div className="text-right">
-                          <div className="text-lg font-semibold text-gray-900">
-                            ₹{(item.product.price * item.quantity).toLocaleString()}
+                          <div className="text-right">
+                            <div className="text-base font-semibold text-gray-900">₹{(item.product.price * item.quantity).toLocaleString()}</div>
+                            <button onClick={() => handleRemove(item.id, item.product.name)} className="mt-2 inline-flex items-center gap-1 text-red-600 hover:text-red-700 text-sm" title="Remove item">
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                              Remove
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -183,7 +223,7 @@ const CartPage: React.FC = () => {
             {/* Order Summary */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-8">
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
                   
                   <div className="space-y-4">
@@ -219,14 +259,20 @@ const CartPage: React.FC = () => {
                   {shippingCost > 0 && (
                     <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-800">
-                        Add ₹{(1000 - state.totalAmount).toLocaleString()} more to get free shipping!
+                        Add ₹{Math.max(0, 1000 - state.totalAmount).toLocaleString()} more to get free shipping!
                       </p>
                     </div>
                   )}
+
+                  {/* Coupon apply (UI-only) */}
+                  <div className="mt-4 flex items-center gap-2">
+                    <input className="flex-1 px-4 py-2 border border-gray-300 rounded-xl bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black" placeholder="Apply coupon code" />
+                    <button className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50">Apply</button>
+                  </div>
                   
                   <button
                     onClick={handleCheckout}
-                    className="w-full mt-6 bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                    className="w-full mt-6 h-14 rounded-full bg-[#fdd835] text-gray-900 font-semibold border border-yellow-300 shadow-md hover:bg-[#fbc02d] transition-colors"
                   >
                     Proceed to Checkout
                   </button>
@@ -244,6 +290,20 @@ const CartPage: React.FC = () => {
         </div>
       </div>
       <Footer />
+
+      {/* Sticky mobile CTA */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+        <div className="flex items-center justify-between mb-2 text-sm text-gray-700">
+          <span>Total</span>
+          <span className="font-semibold">₹{finalTotal.toLocaleString()}</span>
+        </div>
+        <button
+          onClick={handleCheckout}
+          className="w-full h-14 rounded-full bg-[#fdd835] text-gray-900 font-semibold border border-yellow-300 shadow-md hover:bg-[#fbc02d] transition-colors"
+        >
+          Proceed to Checkout
+        </button>
+      </div>
 
       {/* Authentication Modal */}
       <AuthModal

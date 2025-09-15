@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import LiveDateTime from '@/components/LiveDateTime';
 import { productService } from '@/services/productService';
 import { Product } from '@/types/product';
+import ProductCard from '@/components/ProductCard';
 import '../styles/footer.css';
 
 export default function Home() {
@@ -423,42 +424,9 @@ export default function Home() {
                         </div>
                       ))
                     ) : tshirtProducts.length > 0 ? (
-                      // Display real products
+                      // Display real products using reusable card
                       tshirtProducts.map((product) => (
-                        <Link key={product.id} href={`/product/${product.id}`}>
-                          <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                            <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                              <Image
-                                src={product.images[0] || '/images/tshirt.jpg'}
-                                alt={product.name}
-                                width={300}
-                                height={400}
-                                className="w-full h-48 sm:h-64 lg:h-96 object-cover hover:scale-110 transition-transform duration-500"
-                              />
-                              
-                            </div>
-                            <div className="mt-3 sm:mt-4 text-center">
-                              <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-black mb-1 sm:mb-2 truncate px-2">
-                                {product.name}
-                              </h3>
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-xs sm:text-sm text-gray-900 font-bold">₹{formatPrice(product.price)}</span>
-                                {typeof product.originalPrice === 'number' && (
-                                  <span className="text-xs sm:text-sm text-red-500 line-through">₹{formatPrice(product.originalPrice)}</span>
-                                )}
-                                {(() => {
-                                  const pct = getDiscountPercent(product.price, product.originalPrice, (product as any).discountPercent);
-                                  return typeof pct === 'number' && pct > 0 ? (
-                                    <span className="text-[10px] sm:text-[11px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded font-semibold">{pct}% off</span>
-                                  ) : null;
-                                })()}
-                              </div>
-                              {!product.inStock && (
-                                <p className="text-xs text-red-500 mt-1">Out of Stock</p>
-                              )}
-                            </div>
-                          </div>
-                        </Link>
+                        <ProductCard key={product.id} product={product} />
                       ))
                     ) : (
                       // Fallback to static content if no products
@@ -480,6 +448,78 @@ export default function Home() {
                             <p className="text-xs sm:text-sm text-gray-600 font-medium">
                               From ₹299
                             </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </section>
+
+                  {/* Hoodie Collection Section */}
+                  <section className="py-20 bg-white">
+                    <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                      <div className="mb-12"> {/* Left-aligned title */}
+                        <h2 className="text-2xl md:text-3xl font-bold text-black tracking-tight">
+                          HOODIE STORE
+                        </h2>
+                        <div className="w-18 h-1 bg-gray-400 mt-2"></div> {/* Gray underline */}
+                      </div>
+                      
+                      {/* Hero Hoodie Image with Quote and Button */}
+                      <div className="flex justify-center mb-16">
+                        <div className="relative w-full max-w-6xl h-[350px]">
+                          <Image
+                            src="/images/hoodie.jpg"
+                            alt="Hoodie Collection"
+                            fill
+                            className="object-cover shadow-2xl"
+                          />
+                          {/* Overlay with Quote and Button */}
+                          <div className="absolute inset-0 bg-black/30 flex items-end justify-start">
+                            <div className="text-left text-white p-8">
+                              <h3 className="text-3xl md:text-4xl font-light mb-4 tracking-[0.08em] drop-shadow-2xl">
+                                COZY COMFORT AWAITS
+                              </h3>
+                              <p className="text-base md:text-lg mb-6 font-light leading-relaxed drop-shadow-lg max-w-md">
+                                Wrap yourself in warmth and style with our premium hoodie collection designed for ultimate comfort
+                              </p>
+                              <Link href="/products?category=hoodies">
+                                <button className="bg-white text-black px-6 py-3 text-base font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 tracking-wide shadow-lg hover:shadow-xl hover:shadow-white/20 border border-white/20">
+                                  Shop Now
+                                </button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  
+                  {/* Hoodie Product Grid - Dynamic data from API */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                    {loading ? (
+                      Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="animate-pulse">
+                          <div className="bg-gray-200 rounded-xl h-96"></div>
+                          <div className="mt-3 space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                          </div>
+                        </div>
+                      ))
+                    ) : hoodieProducts.length > 0 ? (
+                      hoodieProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))
+                    ) : (
+                      // Fallback static content
+                      ['hoodie1','hoodie2','hoodie3','hoodie4'].map((img, idx) => (
+                        <div key={idx} className="group cursor-pointer hover:scale-105 transition-all duration-300">
+                          <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
+                            <Image src={`/images/${img}.jpg`} alt={`Hoodie ${idx+1}`} width={300} height={400} className="w-full h-96 object-cover hover:scale-110 transition-transform duration-500" />
+                          </div>
+                          <div className="mt-4 text-center">
+                            <h3 className="text-lg font-semibold text-black mb-2">Premium Hoodie</h3>
+                            <p className="text-sm text-gray-600 font-medium">From ₹899</p>
                           </div>
                         </div>
                       ))
@@ -649,60 +689,8 @@ export default function Home() {
                         </div>
                       ))
                     ) : hoodieProducts.length > 0 ? (
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                       hoodieProducts.map((product) => (
-                        <Link key={product.id} href={`/product/${product.id}`}>
-                          <div className="group cursor-pointer hover:scale-105 transition-all duration-300">
-                            <div className="bg-white shadow-lg overflow-hidden rounded-xl border border-gray-200">
-                              <Image
-                                src={product.images[0] || '/images/hoodie.jpg'}
-                                alt={product.name}
-                                width={300}
-                                height={400}
-                                className="w-full h-96 object-cover hover:scale-110 transition-transform duration-500"
-                              />
-                            </div>
-                            <div className="mt-4 text-center">
-                              <h3 className="text-lg font-semibold text-black mb-2 truncate px-2">
-                                {product.name}
-                              </h3>
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-sm text-gray-900 font-bold">₹{formatPrice(product.price)}</span>
-                                {typeof product.originalPrice === 'number' && (
-                                  <span className="text-sm text-red-500 line-through">₹{formatPrice(product.originalPrice)}</span>
-                                )}
-                                {(() => {
-                                  const pct = getDiscountPercent(product.price, product.originalPrice, (product as any).discountPercent);
-                                  return typeof pct === 'number' && pct > 0 ? (
-                                    <span className="text-[11px] text-green-700 bg-green-100 px-1.5 py-0.5 rounded font-semibold">{pct}% off</span>
-                                  ) : null;
-                                })()}
-                              </div>
-                              {!product.inStock && (
-                                <p className="text-xs text-red-500 mt-1">Out of Stock</p>
-                              )}
-                            </div>
-                          </div>
-                        </Link>
+                        <ProductCard key={product.id} product={product} />
                       ))
                     ) : (
                       // Fallback static content
