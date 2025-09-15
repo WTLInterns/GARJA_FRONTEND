@@ -35,6 +35,36 @@ class OrderService {
     };
   }
 
+  // Create Razorpay order on backend
+  async createRazorpayOrder(amount: number, currency: string = 'INR', receipt?: string): Promise<{ id: string; amount: number; currency: string; receipt: string; status: string; }> {
+    try {
+      const response = await axios.post(
+        `${API_URL}/user/orders/create-razorpay-order`,
+        { amount, currency, receipt },
+        { headers: this.getAuthHeader() }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating Razorpay order:', error);
+      throw new Error(error.response?.data || 'Failed to create payment order');
+    }
+  }
+
+  // Verify Razorpay payment signature on backend and persist order
+  async verifyRazorpayPayment(payload: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string; }): Promise<Order> {
+    try {
+      const response = await axios.post(
+        `${API_URL}/user/orders/verify-payment`,
+        payload,
+        { headers: this.getAuthHeader() }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('Error verifying Razorpay payment:', error);
+      throw new Error(error.response?.data || 'Payment verification failed');
+    }
+  }
+
   // Buy product immediately (without adding to cart)
   async buyNow(request: BuyNowRequest): Promise<Order> {
     try {

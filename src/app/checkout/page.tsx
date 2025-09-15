@@ -12,7 +12,14 @@ import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 import SuccessNotification from '@/components/SuccessNotification';
 
- 
+// Razorpay credentials
+const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const CheckoutPage: React.FC = () => {
   const { state, clearCart } = useCart();
@@ -24,8 +31,9 @@ const CheckoutPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [orderJustPlaced, setOrderJustPlaced] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
-  // All hooks must be declared before any early returns
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
     fullName: '',
     phone: '',
@@ -37,16 +45,60 @@ const CheckoutPage: React.FC = () => {
     country: 'India'
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<'cod'>('cod');
+  // Only online payment via Razorpay
+  const [paymentMethod] = useState<'razorpay'>('razorpay');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Partial<ShippingAddress>>({});
   const [savedAddress, setSavedAddress] = useState<ShippingAddress | null>(null);
   const [addressMode, setAddressMode] = useState<'saved' | 'new'>('new');
 
+  // Load Razorpay Script Function
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      // Check if script is already loaded
+      if (window.Razorpay) {
+        setRazorpayLoaded(true);
+        resolve(true);
+        return;
+      }
+
+      // Check if script element already exists
+      const existingScript = document.getElementById('razorpay-script');
+      if (existingScript) {
+        existingScript.onload = () => {
+          setRazorpayLoaded(true);
+          resolve(true);
+        };
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = 'razorpay-script';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      
+      script.onload = () => {
+        console.log('Razorpay script loaded successfully');
+        setRazorpayLoaded(true);
+        resolve(true);
+      };
+      
+      script.onerror = () => {
+        console.error('Failed to load Razorpay script');
+        setRazorpayLoaded(false);
+        resolve(false);
+      };
+      
+      document.body.appendChild(script);
+    });
+  };
+
   useEffect(() => {
     setIsClient(true);
 
-    // Don't show auth modal while auth is loading
+    // Load Razorpay script
+    loadRazorpayScript();
+
     if (!isAuthLoading && !user) {
       setAuthModalMode('login');
       setShowAuthModal(true);
@@ -58,7 +110,6 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // No third-party payment script needed (COD only)
     // Load saved address from localStorage
     try {
       const saved = localStorage.getItem('shippingAddress');
@@ -66,28 +117,28 @@ const CheckoutPage: React.FC = () => {
         const parsed: ShippingAddress = JSON.parse(saved);
         setSavedAddress(parsed);
         setAddressMode('saved');
-        // Pre-fill state with saved so order summary has values
         setShippingAddress(parsed);
       }
     } catch (e) {
       console.warn('Failed to load saved address', e);
     }
+
+    return () => {
+      // Don't remove script on unmount as it might be needed by other components
+    };
   }, [user, isAuthLoading, state.items.length, router, orderJustPlaced]);
 
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
-    // If user still not logged in after closing modal, redirect to cart
     if (!user) {
       router.push('/cart');
     }
   };
 
   const handleAuthSuccess = () => {
-    // User successfully logged in, close modal and stay on checkout page
     setShowAuthModal(false);
   };
 
-  // Show loading state during hydration or auth loading
   if (!isClient || isAuthLoading) {
     return (
       <>
@@ -103,7 +154,6 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  // Early return for auth check or empty cart
   if ((!user || state.items.length === 0) && !orderJustPlaced) {
     return (
       <>
@@ -115,8 +165,6 @@ const CheckoutPage: React.FC = () => {
           </div>
         </div>
         <Footer />
-
-        {/* Authentication Modal */}
         <AuthModal
           isOpen={showAuthModal}
           onClose={handleAuthModalClose}
@@ -141,12 +189,10 @@ const CheckoutPage: React.FC = () => {
     if (!shippingAddress.state.trim()) newErrors.state = 'State is required';
     if (!shippingAddress.zipCode.trim()) newErrors.zipCode = 'ZIP code is required';
 
-    // Phone validation
     if (shippingAddress.phone && !/^\+?[\d\s-()]{10,}$/.test(shippingAddress.phone)) {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
-    // ZIP code validation
     if (shippingAddress.zipCode && !/^\d{6}$/.test(shippingAddress.zipCode)) {
       newErrors.zipCode = 'Please enter a valid 6-digit ZIP code';
     }
@@ -174,38 +220,135 @@ const CheckoutPage: React.FC = () => {
     setAddressMode('new');
   };
 
-  const handleCODOrder = async () => {
+  const handleRazorpayPayment = async () => {
     try {
       setIsProcessing(true);
+      setErrorMessage('');
 
-      // Create order via backend API for COD as well
-      const order = await orderService.checkout();
-
-      // Show success message toast
-      setSuccessMessage(order.message || 'Order placed successfully!');
-      setShowSuccess(true);
-      setOrderJustPlaced(true);
-
-      // Clear cart
-      await clearCart();
-
-      // Persist address if user used a new address
-      if (addressMode === 'new') {
-        try {
-          localStorage.setItem('shippingAddress', JSON.stringify(shippingAddress));
-        } catch (e) {
-          console.warn('Failed to save shipping address', e);
+      // Ensure Razorpay script is loaded
+      if (!razorpayLoaded || !window.Razorpay) {
+        const loaded = await loadRazorpayScript();
+        if (!loaded) {
+          throw new Error('Failed to load Razorpay. Please refresh and try again.');
         }
       }
 
-      // Redirect to orders page after short delay
-      setTimeout(() => {
-        router.push('/user/orders');
-      }, 1500);
+      if (!RAZORPAY_KEY_ID) {
+        throw new Error('Razorpay key is not configured. Please set NEXT_PUBLIC_RAZORPAY_KEY_ID.');
+      }
+
+      // 1) Create order on backend for Razorpay
+      const receipt = `rcpt_${Date.now()}`;
+      const rpOrder = await orderService.createRazorpayOrder(finalTotal, 'INR', receipt);
+      if (!rpOrder?.id) {
+        throw new Error('Failed to initialize payment. Please try again.');
+      }
+
+      const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: rpOrder.amount, // Amount in paise
+        currency: rpOrder.currency,
+        name: 'Garja',
+        description: 'Order Payment',
+        order_id: rpOrder.id,
+        redirect: false,
+        method: {
+          card: true,
+          netbanking: true,
+          wallet: true,
+          upi: true,
+        },
+        upi: {
+          flow: 'collect', // avoid opening external UPI app (e.g., paytmmp://)
+        },
+        retry: {
+          enabled: true,
+          max_count: 1,
+        },
+        handler: async function (response: any) {
+          try {
+            console.log('Payment Success Response:', response);
+            
+            // 2) Verify payment on backend and create order
+            const order = await orderService.verifyRazorpayPayment({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+
+            setSuccessMessage('Payment successful and order placed!');
+            setShowSuccess(true);
+            setOrderJustPlaced(true);
+            
+            // Clear cart
+            await clearCart();
+
+            // Play pleasant success sound
+            try {
+              const audio = new Audio('/sounds/success.mp3');
+              audio.play().catch(() => {});
+            } catch {}
+
+            // Save address if new
+            if (addressMode === 'new') {
+              try {
+                localStorage.setItem('shippingAddress', JSON.stringify(shippingAddress));
+              } catch (e) {
+                console.warn('Failed to save shipping address', e);
+              }
+            }
+
+            // Redirect to orders page
+            setTimeout(() => {
+              router.push('/user/orders');
+            }, 1500);
+
+          } catch (error: any) {
+            console.error('Order creation error:', error);
+            setErrorMessage('Payment succeeded but order creation failed. Please contact support.');
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: shippingAddress.fullName,
+          email: user?.email || '',
+          contact: shippingAddress.phone,
+        },
+        notes: {
+          address: `${shippingAddress.addressLine1}, ${shippingAddress.city}`,
+          user_id: user?.id || 'guest',
+        },
+        theme: {
+          color: '#000000',
+        },
+        modal: {
+          ondismiss: function () {
+            console.log('Payment modal dismissed');
+            setIsProcessing(false);
+          },
+          escape: true,
+          backdropclose: false,
+        },
+      };
+
+      console.log('Creating Razorpay instance with options:', options);
+      
+      const rzp = new window.Razorpay(options);
+      
+      rzp.on('payment.failed', function (response: any) {
+        console.error('Payment failed response:', response);
+        const errorMsg = response.error?.description || 'Payment failed. Please try again.';
+        setErrorMessage(errorMsg);
+        setIsProcessing(false);
+      });
+
+      console.log('Opening Razorpay checkout...');
+      rzp.open();
+
     } catch (error: any) {
-      console.error('Error placing COD order:', error);
-      alert(error?.message || 'Error placing order. Please try again.');
-    } finally {
+      console.error('Error in handleRazorpayPayment:', error);
+      setErrorMessage(error.message || 'Error processing payment. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -214,12 +357,12 @@ const CheckoutPage: React.FC = () => {
     e.preventDefault();
 
     if (!validateForm()) {
+      alert('Please fill in all required fields correctly.');
       return;
     }
 
-    await handleCODOrder();
+    await handleRazorpayPayment();
   };
-
 
   return (
     <>
@@ -260,7 +403,7 @@ const CheckoutPage: React.FC = () => {
                     <p className="text-gray-700 text-sm mt-1">Phone: {savedAddress.phone}</p>
                   </div>
                 ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -367,18 +510,21 @@ const CheckoutPage: React.FC = () => {
                       {errors.zipCode && <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>}
                     </div>
                   </div>
-                </form>
+                </div>
                 )}
               </div>
 
-              {/* Payment Method */}
+              {/* Payment Method - Only Online Payment */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Payment Method</h2>
-                <p className="text-sm text-gray-600">Only Cash on Delivery (COD) is available at the moment.</p>
-                <div className="mt-4 flex items-center">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm font-medium">
-                    COD
-                  </span>
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Payment Method</h2>
+                {!razorpayLoaded && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">Loading payment options...</p>
+                  </div>
+                )}
+                <div className="flex items-center">
+                  <div className="h-4 w-4 rounded-full bg-black mr-3"></div>
+                  <span className="text-sm font-medium text-gray-700">Online Payment (Cards, UPI, Net Banking, Wallets)</span>
                 </div>
               </div>
             </div>
@@ -395,7 +541,7 @@ const CheckoutPage: React.FC = () => {
                       <div key={item.id} className="flex items-center space-x-3">
                         <Link href={`/product/${item.product.id}`} className="flex-shrink-0">
                           <img
-                            src={item.product.images[0]}
+                            src={item.product.images}
                             alt={item.product.name}
                             className="w-12 h-12 object-cover rounded hover:opacity-90 transition"
                           />
@@ -450,7 +596,7 @@ const CheckoutPage: React.FC = () => {
 
                   <button
                     onClick={handleSubmit}
-                    disabled={isProcessing}
+                    disabled={isProcessing || !razorpayLoaded}
                     className="w-full mt-6 bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing ? (
@@ -458,8 +604,10 @@ const CheckoutPage: React.FC = () => {
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                         Processing...
                       </div>
+                    ) : !razorpayLoaded ? (
+                      'Loading Payment Options...'
                     ) : (
-                      `Place Order - ₹${finalTotal.toLocaleString()}`
+                      `Pay Now - ₹${finalTotal.toLocaleString()}`
                     )}
                   </button>
                 </div>

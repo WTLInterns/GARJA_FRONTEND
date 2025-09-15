@@ -145,7 +145,8 @@ export const productService = {
       const toBackendCategory = (c: string) => {
         const v = c.trim().toLowerCase();
         if (v === 'hoodies' || v === 'hoodie') return 'Hoodie';
-        if (v === 't-shirts' || v === 'tshirt' || v === 'tshirts') return 't-shirts';
+        // DB stores TShirts (capital S) -> send exactly that to backend
+        if (v === 't-shirts' || v === 'tshirt' || v === 'tshirts') return 'TShirts';
         if (v === 'jeans' || v === 'jean') return 'jeans';
         if (v === 'jackets' || v === 'jacket') return 'jackets';
         if (v === 'shirts' || v === 'shirt') return 'shirts';
