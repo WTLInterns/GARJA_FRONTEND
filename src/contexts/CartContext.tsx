@@ -31,7 +31,7 @@ type CartAction =
 
 interface CartContextType {
   state: CartState;
-  addItem: (product: Product, quantity: number, selectedSize: string, selectedColor: string) => void;
+  addItem: (product: Product, quantity: number, selectedSize: string, selectedColor: string) => Promise<boolean>;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -282,7 +282,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const addItem = async (product: Product, quantity: number, selectedSize: string, selectedColor: string) => {
+  const addItem = async (product: Product, quantity: number, selectedSize: string, selectedColor: string): Promise<boolean> => {
     try {
       console.log('[Cart] addItem →', { productId: product.id, quantity, selectedSize, selectedColor });
       const added = await cartService.addToCart(Number(product.id), quantity);
@@ -297,10 +297,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       await refreshCart();
       dispatch({ type: 'SHOW_SUCCESS', payload: `${product.name} added to cart successfully!` });
+      return true;
     } catch (e: any) {
       console.error('[Cart] addItem error:', e);
       dispatch({ type: 'SHOW_SUCCESS', payload: e.message || 'Failed to add to cart' });
       setTimeout(() => dispatch({ type: 'HIDE_SUCCESS' }), 1500);
+      return false;
     }
   };
 

@@ -7,13 +7,17 @@ import React, { useEffect, useRef } from "react";
  * Usage:
  *   <ConfettiBurst play={playConfetti} onDone={() => setPlayConfetti(false)} />
  */
-export default function ConfettiBurst({ play, onDone, duration = 1000 }: {
+export default function ConfettiBurst({ play, onDone, duration = 1000, enableSound = true, soundVariant = 'sparkle' }: {
   play: boolean;
   onDone?: () => void;
   duration?: number; // ms
+  enableSound?: boolean;
+  soundVariant?: 'sparkle' | 'celebrate';
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const playedRef = useRef<boolean>(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -40,9 +44,9 @@ export default function ConfettiBurst({ play, onDone, duration = 1000 }: {
     resize();
 
     const spawn = (n?: number) => {
-      // Responsive particle count
+      // Responsive particle count (reduced for performance)
       const area = window.innerWidth * window.innerHeight;
-      const base = area < 400_000 ? 80 : area < 900_000 ? 120 : 160;
+      const base = area < 400_000 ? 50 : area < 900_000 ? 80 : 110;
       const count = n ?? base;
       particles = [];
       for (let i = 0; i < count; i++) {
@@ -57,7 +61,7 @@ export default function ConfettiBurst({ play, onDone, duration = 1000 }: {
           vy: Math.sin(angle) * speed - 4,
           size: 4 + Math.random() * 6,
           color: colors[Math.floor(Math.random() * colors.length)],
-          life: 1,
+          life: 0.9,
           rot: Math.random() * Math.PI,
           vr: (Math.random() - 0.5) * 0.3,
         });
@@ -72,12 +76,12 @@ export default function ConfettiBurst({ play, onDone, duration = 1000 }: {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // gravity and fade
+      // gravity and fade (faster fade for fewer frames)
       particles.forEach(p => {
         p.vy += 0.15;
         p.x += p.vx;
         p.y += p.vy;
-        p.life -= 0.008;
+        p.life -= 0.012;
         p.rot += p.vr;
       });
       particles = particles.filter(p => p.life > 0);
@@ -106,6 +110,98 @@ export default function ConfettiBurst({ play, onDone, duration = 1000 }: {
 
     if (play) {
       // spawn and render immediately for snappier UX
+      // Sound: trigger once per burst
+      if (enableSound && !playedRef.current) {
+        // Try to create or resume AudioContext (may require user gesture in some browsers)
+        try {
+          if (!audioCtxRef.current) {
+            audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          }
+          const ac = audioCtxRef.current;
+          // If context is suspended, try resume
+          if (ac.state === 'suspended') {
+            ac.resume().catch(() => {});
+          }
+
+          // Create a short "pop + sparkle" using an oscillator and noise burst
+          const now = ac.currentTime;
+
+          // Variant-based sound design
+          if (soundVariant === 'celebrate') {
+            // Brighter chime: two detuned sine blips + gentle noise
+            const o1 = ac.createOscillator();
+            const o2 = ac.createOscillator();
+            const g = ac.createGain();
+            o1.type = 'sine';
+            o2.type = 'sine';
+            o1.frequency.setValueAtTime(660, now);
+            o2.frequency.setValueAtTime(880, now);
+            o2.detune.setValueAtTime(+10, now);
+            g.gain.setValueAtTime(0.0001, now);
+            g.gain.exponentialRampToValueAtTime(0.5, now + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+            o1.connect(g);
+            o2.connect(g);
+            g.connect(ac.destination);
+            o1.start(now);
+            o2.start(now);
+            o1.stop(now + 0.36);
+            o2.stop(now + 0.36);
+
+            // Soft sparkle tail
+            const bufferSize = ac.sampleRate * 0.25;
+            const noiseBuffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+            const noise = ac.createBufferSource();
+            noise.buffer = noiseBuffer;
+            const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1200;
+            const ng = ac.createGain();
+            ng.gain.setValueAtTime(0.001, now);
+            ng.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+            ng.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            noise.connect(hp).connect(ng).connect(ac.destination);
+            noise.start(now + 0.02);
+            noise.stop(now + 0.32);
+          } else {
+            // Default 'sparkle' (triangle pop + filtered noise)
+            const osc = ac.createOscillator();
+            const gain = ac.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.15);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.4, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+            osc.connect(gain).connect(ac.destination);
+            osc.start(now);
+            osc.stop(now + 0.2);
+
+            const bufferSize = ac.sampleRate * 0.2; // 200ms
+            const noiseBuffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+            const noise = ac.createBufferSource();
+            noise.buffer = noiseBuffer;
+            const noiseFilter = ac.createBiquadFilter();
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.value = 1000;
+            const noiseGain = ac.createGain();
+            noiseGain.gain.setValueAtTime(0.001, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+            noise.connect(noiseFilter).connect(noiseGain).connect(ac.destination);
+            noise.start(now);
+            noise.stop(now + 0.2);
+          }
+
+          playedRef.current = true;
+          // Reset after a tick so subsequent plays can trigger again
+          setTimeout(() => { playedRef.current = false; }, duration + 100);
+        } catch (e) {
+          // Fail silently if audio cannot play (autoplay policies)
+        }
+      }
       spawn();
       rafRef.current = requestAnimationFrame(step);
     }
@@ -114,7 +210,7 @@ export default function ConfettiBurst({ play, onDone, duration = 1000 }: {
       window.removeEventListener("resize", onResize);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [play, duration, onDone]);
+  }, [play, duration, onDone, enableSound]);
 
   return (
     <canvas

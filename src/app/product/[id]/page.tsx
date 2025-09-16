@@ -96,15 +96,25 @@ const ProductDetailPage: React.FC = () => {
       router.push('/?login=true&redirect=' + encodeURIComponent(window.location.pathname));
       return;
     }
-    
+
     if (!product) return;
-    
-    // Fire confetti immediately for snappy feedback
-    setShowConfetti(true);
+
     const fallbackColor = product.colors?.[0] || 'Default';
-    // Do not await here to avoid delaying the animation
-    addItem(product, quantity, selectedSize, fallbackColor);
-    openCart();
+    try {
+      // Attempt to add to cart
+      const success = await addItem(product, quantity, selectedSize, fallbackColor);
+      if (success) {
+        // Only show confetti on success
+        setShowConfetti(true);
+        // Open cart after a microtask to keep UI smooth
+        requestAnimationFrame(() => openCart());
+      } else {
+        // Do not show confetti if add failed
+      }
+    } catch (e) {
+      console.error('Add to cart failed:', e);
+      // Do not show confetti on exception
+    }
   };
 
   const handleBuyNow = async () => {

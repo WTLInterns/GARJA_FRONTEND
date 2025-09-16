@@ -7,8 +7,10 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ShippingAddress } from '@/types/product';
 import { orderService } from '@/services/orderService';
+import { addressService, AddressRequest, AddressResponse } from '@/services/addressService';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ConfettiBurst from '@/components/ConfettiBurst';
 import AuthModal from '@/components/AuthModal';
 import SuccessNotification from '@/components/SuccessNotification';
 
@@ -31,6 +33,9 @@ const CheckoutPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [orderJustPlaced, setOrderJustPlaced] = useState(false);
+  const [showConfettiA, setShowConfettiA] = useState(false);
+  const [showConfettiB, setShowConfettiB] = useState(false);
+  const [showTopBanner, setShowTopBanner] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -49,8 +54,19 @@ const CheckoutPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'razorpay'>('razorpay');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Partial<ShippingAddress>>({});
-  const [savedAddress, setSavedAddress] = useState<ShippingAddress | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<AddressResponse[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [addressMode, setAddressMode] = useState<'saved' | 'new'>('new');
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const [addressFormData, setAddressFormData] = useState<AddressRequest>({
+    steet: '',
+    city: '',
+    landmark: '',
+    pincode: '',
+    address: ''
+  });
+  const [addressErrors, setAddressErrors] = useState<Partial<AddressRequest>>({});
 
   // Load Razorpay Script Function
   const loadRazorpayScript = (): Promise<boolean> => {
@@ -110,23 +126,115 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Load saved address from localStorage
-    try {
-      const saved = localStorage.getItem('shippingAddress');
-      if (saved) {
-        const parsed: ShippingAddress = JSON.parse(saved);
-        setSavedAddress(parsed);
-        setAddressMode('saved');
-        setShippingAddress(parsed);
-      }
-    } catch (e) {
-      console.warn('Failed to load saved address', e);
-    }
+    // Load saved addresses from backend
+    loadSavedAddresses();
 
     return () => {
       // Don't remove script on unmount as it might be needed by other components
     };
   }, [user, isAuthLoading, state.items.length, router, orderJustPlaced]);
+
+  const loadSavedAddresses = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoadingAddresses(true);
+      const addresses = await addressService.getAllAddresses();
+      setSavedAddresses(addresses);
+      
+      if (addresses.length > 0) {
+        setAddressMode('saved');
+        setSelectedAddressId(addresses[0].id);
+      } else {
+        setAddressMode('new');
+        setShowAddressForm(true);
+      }
+    } catch (error) {
+      console.error('Failed to load addresses:', error);
+      setAddressMode('new');
+      setShowAddressForm(true);
+    } finally {
+      setIsLoadingAddresses(false);
+    }
+  };
+
+  const validateAddressForm = (): boolean => {
+    const newErrors: Partial<AddressRequest> = {};
+
+    if (!addressFormData.steet.trim()) newErrors.steet = 'Street is required';
+    if (!addressFormData.city.trim()) newErrors.city = 'City is required';
+    if (!addressFormData.pincode.trim()) newErrors.pincode = 'Pincode is required';
+    if (!addressFormData.address.trim()) newErrors.address = 'Address is required';
+
+    if (addressFormData.pincode && !/^\d{6}$/.test(addressFormData.pincode)) {
+      newErrors.pincode = 'Please enter a valid 6-digit pincode';
+    }
+
+    setAddressErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddressInputChange = (field: keyof AddressRequest, value: string) => {
+    setAddressFormData(prev => ({ ...prev, [field]: value }));
+    if (addressErrors[field]) {
+      setAddressErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleAddAddress = async () => {
+    if (!validateAddressForm()) {
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const newAddress = await addressService.addAddress(addressFormData);
+      setSavedAddresses(prev => [...prev, newAddress]);
+      setSelectedAddressId(newAddress.id);
+      setAddressMode('saved');
+      setShowAddressForm(false);
+      setAddressFormData({
+        steet: '',
+        city: '',
+        landmark: '',
+        pincode: '',
+        address: ''
+      });
+      setSuccessMessage('Address added successfully!');
+      setShowSuccess(true);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to add address');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteAddress = async (addressId: number) => {
+    if (!confirm('Are you sure you want to delete this address?')) {
+      return;
+    }
+
+    try {
+      await addressService.deleteAddress(addressId);
+      setSavedAddresses(prev => prev.filter(addr => addr.id !== addressId));
+      
+      if (selectedAddressId === addressId) {
+        const remainingAddresses = savedAddresses.filter(addr => addr.id !== addressId);
+        if (remainingAddresses.length > 0) {
+          setSelectedAddressId(remainingAddresses[0].id);
+        } else {
+          setSelectedAddressId(null);
+          setAddressMode('new');
+          setShowAddressForm(true);
+        }
+      }
+      
+      setSuccessMessage('Address deleted successfully!');
+      setShowSuccess(true);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to delete address');
+    }
+  };
 
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
@@ -208,16 +316,15 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  const useSavedAddress = () => {
-    if (savedAddress) {
-      setShippingAddress(savedAddress);
-      setAddressMode('saved');
-      setErrors({});
-    }
+  const handleAddressSelection = (addressId: number) => {
+    setSelectedAddressId(addressId);
+    setAddressMode('saved');
   };
 
-  const useNewAddress = () => {
+  const handleUseNewAddress = () => {
     setAddressMode('new');
+    setShowAddressForm(true);
+    setSelectedAddressId(null);
   };
 
   const handleRazorpayPayment = async () => {
@@ -269,16 +376,36 @@ const CheckoutPage: React.FC = () => {
           try {
             console.log('Payment Success Response:', response);
             
-            // 2) Verify payment on backend and create order
+            // 2) Verify payment on backend and create order with selected address
+            if (!selectedAddressId && addressMode === 'saved') {
+              throw new Error('Please select an address');
+            }
+            
+            let addressIdToUse = selectedAddressId;
+            
+            // If using new address, add it first
+            if (addressMode === 'new') {
+              if (!validateAddressForm()) {
+                throw new Error('Please fill in all address fields correctly');
+              }
+              const newAddress = await addressService.addAddress(addressFormData);
+              addressIdToUse = newAddress.id;
+            }
+            
             const order = await orderService.verifyRazorpayPayment({
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
-            });
+            }, addressIdToUse!);
 
-            setSuccessMessage('Payment successful and order placed!');
+            setSuccessMessage('Payment successful! Your order has been placed.');
             setShowSuccess(true);
             setOrderJustPlaced(true);
+            // Celebration sequence: two bursts with different sounds
+            setShowConfettiA(true);
+            setTimeout(() => setShowConfettiB(true), 300);
+            // Show top banner popup
+            setShowTopBanner(true);
             
             // Clear cart
             await clearCart();
@@ -289,19 +416,13 @@ const CheckoutPage: React.FC = () => {
               audio.play().catch(() => {});
             } catch {}
 
-            // Save address if new
-            if (addressMode === 'new') {
-              try {
-                localStorage.setItem('shippingAddress', JSON.stringify(shippingAddress));
-              } catch (e) {
-                console.warn('Failed to save shipping address', e);
-              }
-            }
+            // Refresh addresses list
+            await loadSavedAddresses();
 
-            // Redirect to orders page
+            // Redirect to orders page after brief celebration
             setTimeout(() => {
               router.push('/user/orders');
-            }, 1500);
+            }, 2000);
 
           } catch (error: any) {
             console.error('Order creation error:', error);
@@ -356,8 +477,14 @@ const CheckoutPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      alert('Please fill in all required fields correctly.');
+    // Validate address selection
+    if (addressMode === 'saved' && !selectedAddressId) {
+      setErrorMessage('Please select an address');
+      return;
+    }
+
+    if (addressMode === 'new' && !validateAddressForm()) {
+      setErrorMessage('Please fill in all address fields correctly.');
       return;
     }
 
@@ -376,135 +503,226 @@ const CheckoutPage: React.FC = () => {
             <div className="space-y-8">
               {/* Shipping Address */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Shipping Address</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Delivery Address</h2>
+                  {savedAddresses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleUseNewAddress}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      + Add New Address
+                    </button>
+                  )}
+                </div>
 
-                {/* Address Mode Switch */}
-                {savedAddress ? (
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
-                      Using: <span className="font-medium">{addressMode === 'saved' ? 'Saved Address' : 'New Address'}</span>
-                    </div>
-                    {addressMode === 'saved' ? (
-                      <button type="button" onClick={useNewAddress} className="text-sm text-blue-600 hover:underline">Use different address</button>
-                    ) : (
-                      <button type="button" onClick={useSavedAddress} className="text-sm text-blue-600 hover:underline">Use saved address</button>
+                {isLoadingAddresses ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+                    <span className="ml-2 text-gray-600">Loading addresses...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Saved Addresses */}
+                    {savedAddresses.length > 0 && addressMode === 'saved' && (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-medium text-gray-700">Select Delivery Address</h3>
+                        {savedAddresses.map((address) => (
+                          <div
+                            key={address.id}
+                            className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                              selectedAddressId === address.id
+                                ? 'border-black ring-2 ring-black/10 bg-gray-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => handleAddressSelection(address.id)}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-3">
+                                <input
+                                  type="radio"
+                                  name="selectedAddress"
+                                  value={address.id}
+                                  checked={selectedAddressId === address.id}
+                                  onChange={() => handleAddressSelection(address.id)}
+                                  className="mt-1 h-4 w-4 text-black border-gray-300 focus:ring-black"
+                                />
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {address.address}
+                                  </div>
+                                  <div className="text-sm text-gray-600 mt-1">
+                                    {address.steet}, {address.city}
+                                  </div>
+                                  {address.landmark && (
+                                    <div className="text-sm text-gray-600">
+                                      Landmark: {address.landmark}
+                                    </div>
+                                  )}
+                                  <div className="text-sm text-gray-600">
+                                    Pincode: {address.pincode}
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteAddress(address.id);
+                                }}
+                                className="text-red-500 hover:text-red-700 p-1"
+                                title="Delete address"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* New Address Form */}
+                    {(addressMode === 'new' || showAddressForm) && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-gray-700">Add New Address</h3>
+                          {savedAddresses.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowAddressForm(false);
+                                setAddressMode('saved');
+                              }}
+                              className="text-sm text-gray-500 hover:text-gray-700"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Street Address *
+                            </label>
+                            <input
+                              type="text"
+                              value={addressFormData.steet}
+                              onChange={(e) => handleAddressInputChange('steet', e.target.value)}
+                              className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${
+                                addressErrors.steet ? 'border-red-500' : 'border-gray-300'
+                              }`}
+                              placeholder="e.g., 123 Main Street"
+                            />
+                            {addressErrors.steet && (
+                              <p className="text-red-500 text-sm mt-1">{addressErrors.steet}</p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              City *
+                            </label>
+                            <input
+                              type="text"
+                              value={addressFormData.city}
+                              onChange={(e) => handleAddressInputChange('city', e.target.value)}
+                              className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${
+                                addressErrors.city ? 'border-red-500' : 'border-gray-300'
+                              }`}
+                              placeholder="e.g., Mumbai"
+                            />
+                            {addressErrors.city && (
+                              <p className="text-red-500 text-sm mt-1">{addressErrors.city}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Complete Address *
+                          </label>
+                          <textarea
+                            value={addressFormData.address}
+                            onChange={(e) => handleAddressInputChange('address', e.target.value)}
+                            rows={3}
+                            className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${
+                              addressErrors.address ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="House/Flat no., Building name, Area, etc."
+                          />
+                          {addressErrors.address && (
+                            <p className="text-red-500 text-sm mt-1">{addressErrors.address}</p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Landmark
+                            </label>
+                            <input
+                              type="text"
+                              value={addressFormData.landmark}
+                              onChange={(e) => handleAddressInputChange('landmark', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black"
+                              placeholder="e.g., Near Metro Station"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Pincode *
+                            </label>
+                            <input
+                              type="text"
+                              value={addressFormData.pincode}
+                              onChange={(e) => handleAddressInputChange('pincode', e.target.value)}
+                              className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${
+                                addressErrors.pincode ? 'border-red-500' : 'border-gray-300'
+                              }`}
+                              placeholder="e.g., 400001"
+                              maxLength={6}
+                            />
+                            {addressErrors.pincode && (
+                              <p className="text-red-500 text-sm mt-1">{addressErrors.pincode}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleAddAddress}
+                          disabled={isProcessing}
+                          className="w-full py-3 px-4 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isProcessing ? 'Adding Address...' : 'Save Address'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* No addresses state */}
+                    {savedAddresses.length === 0 && !showAddressForm && (
+                      <div className="text-center py-8">
+                        <div className="text-gray-500 mb-4">
+                          <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          No saved addresses found
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddressForm(true)}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Add your first address
+                        </button>
+                      </div>
                     )}
                   </div>
-                ) : (
-                  <p className="mb-4 text-sm text-gray-600">No saved address found. Please enter your address below.</p>
-                )}
-
-                {addressMode === 'saved' && savedAddress ? (
-                  <div className="border rounded-lg p-4 bg-gray-50">
-                    <p className="text-gray-900 font-medium">{savedAddress.fullName}</p>
-                    <p className="text-gray-700 text-sm">{savedAddress.addressLine1}{savedAddress.addressLine2 ? `, ${savedAddress.addressLine2}` : ''}</p>
-                    <p className="text-gray-700 text-sm">{savedAddress.city}, {savedAddress.state} - {savedAddress.zipCode}</p>
-                    <p className="text-gray-700 text-sm">{savedAddress.country}</p>
-                    <p className="text-gray-700 text-sm mt-1">Phone: {savedAddress.phone}</p>
-                  </div>
-                ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={shippingAddress.fullName}
-                        onChange={(e) => handleInputChange('fullName', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.fullName ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="e.g., Rohan Sharma"
-                      />
-                      {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number *
-                      </label>
-                      <input
-                        type="tel"
-                        value={shippingAddress.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="e.g., 98765 43210"
-                      />
-                      {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address Line 1 *
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingAddress.addressLine1}
-                      onChange={(e) => handleInputChange('addressLine1', e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.addressLine1 ? 'border-red-500' : 'border-gray-300'}`}
-                      placeholder="House no., Street name"
-                    />
-                    {errors.addressLine1 && <p className="text-red-500 text-sm mt-1">{errors.addressLine1}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address Line 2
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingAddress.addressLine2}
-                      onChange={(e) => handleInputChange('addressLine2', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black"
-                      placeholder="Apartment, suite, etc. (optional)"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        City *
-                      </label>
-                      <input
-                        type="text"
-                        value={shippingAddress.city}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="City"
-                      />
-                      {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        State *
-                      </label>
-                      <input
-                        type="text"
-                        value={shippingAddress.state}
-                        onChange={(e) => handleInputChange('state', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.state ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="State"
-                      />
-                      {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ZIP Code *
-                      </label>
-                      <input
-                        type="text"
-                        value={shippingAddress.zipCode}
-                        onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black ${errors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="ZIP Code"
-                      />
-                      {errors.zipCode && <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>}
-                    </div>
-                  </div>
-                </div>
                 )}
               </div>
 
@@ -690,6 +908,23 @@ const CheckoutPage: React.FC = () => {
         onClose={() => setShowSuccess(false)}
         duration={1500}
       />
+
+      {/* Top popup banner (Amazon/Flipkart style) */}
+      {showTopBanner && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10000]">
+          <div className="flex items-center gap-3 bg-white border border-green-200 text-green-800 rounded-full shadow-lg px-4 py-2">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+            <span className="text-sm font-semibold">Payment successful! Order placed.</span>
+            <button onClick={() => setShowTopBanner(false)} className="text-green-700 hover:text-green-900" aria-label="Close">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confetti on success: two different sound variants */}
+      <ConfettiBurst play={showConfettiA} soundVariant="celebrate" onDone={() => setShowConfettiA(false)} />
+      <ConfettiBurst play={showConfettiB} soundVariant="sparkle" onDone={() => setShowConfettiB(false)} />
 
       {/* Authentication Modal */}
       <AuthModal

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mygarja.com';
 
 // Order interfaces based on API response
 export interface Order {
@@ -51,10 +51,10 @@ class OrderService {
   }
 
   // Verify Razorpay payment signature on backend and persist order
-  async verifyRazorpayPayment(payload: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string; }): Promise<Order> {
+  async verifyRazorpayPayment(payload: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string; }, addressId: number): Promise<Order> {
     try {
       const response = await axios.post(
-        `${API_URL}/user/orders/verify-payment`,
+        `${API_URL}/user/orders/verify-payment?addressId=${addressId}`,
         payload,
         { headers: this.getAuthHeader() }
       );

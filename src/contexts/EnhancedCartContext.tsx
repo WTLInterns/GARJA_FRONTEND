@@ -18,6 +18,11 @@ interface CartItem {
   addedAt: string;
 }
 
+
+
+
+
+
 interface CartState {
   items: CartItem[];
   backendCart: BackendCart | null;
@@ -78,7 +83,10 @@ const convertBackendCartToItems = (backendCart: BackendCart): CartItem[] => {
       price: parseFloat(item.price),
       originalPrice: parseFloat(item.price) * 1.2, // Assuming 20% discount
       description: '',
-      category: item.category,
+      category: ((c: string) => {
+        const allowed = ['t-shirts','hoodies','shirts','jackets','pants','jeans','shorts','sweaters'] as const;
+        return (allowed as readonly string[]).includes(c) ? (c as typeof allowed[number]) : 't-shirts';
+      })(item.category),
       images: [item.imageUrl],
       sizes: [item.size],
       colors: ['Default'],
@@ -86,13 +94,14 @@ const convertBackendCartToItems = (backendCart: BackendCart): CartItem[] => {
       reviewCount: 0,
       inStock: item.isActive === 'true',
       stockQuantity: 100,
-      tags: [],
-      createdAt: new Date().toISOString()
+      tags: [] as string[],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     } as Product,
     quantity: item.quantity,
     selectedSize: item.size,
-    selectedColor: 'Default',
-    lineTotal: item.lineTotal,
+    selectedColor: 'Default', 
+    lineTotal: item.lineTotal, 
     addedAt: new Date().toISOString()
   }));
 };
