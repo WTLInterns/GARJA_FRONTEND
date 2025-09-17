@@ -68,22 +68,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       document.addEventListener('keydown', handleEscape);
       // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
-      // Add blur effect to main content
-      const mainContent = document.getElementById('main-content');
-      if (mainContent) {
-        mainContent.style.filter = 'blur(8px)';
-        mainContent.style.transition = 'filter 0.3s ease-out';
-      }
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
-      // Remove blur effect
-      const mainContent = document.getElementById('main-content');
-      if (mainContent) {
-        mainContent.style.filter = 'none';
-      }
     };
   }, [isOpen, onClose]);
 

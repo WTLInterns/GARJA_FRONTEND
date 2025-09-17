@@ -16,8 +16,15 @@ const ProductsPageContent: React.FC = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [sortBy, setSortBy] = useState('newest');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
+  // searchInput = what's typed; searchTerm = applied filter
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const applySearch = () => {
+    // Apply search term to grid only
+    setSearchTerm(searchInput);
+  };
 
   // Load products from API
   useEffect(() => {
@@ -65,6 +72,16 @@ const ProductsPageContent: React.FC = () => {
     filtered = filtered.filter(product => 
       product.price >= priceRange.min && product.price <= priceRange.max
     );
+
+    // Apply search filter (by name and description)
+    if (searchTerm.trim()) {
+      const q = searchTerm.trim().toLowerCase();
+      filtered = filtered.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        return name.includes(q) || desc.includes(q);
+      });
+    }
     
     // Apply sorting
     switch (sortBy) {
@@ -87,7 +104,7 @@ const ProductsPageContent: React.FC = () => {
     }
     
     setFilteredProducts(filtered);
-  }, [products, category, sortBy, priceRange]);
+  }, [products, category, sortBy, priceRange, searchTerm]);
 
   const getCategoryTitle = () => {
     if (!category) return 'All Products';
@@ -110,6 +127,29 @@ const ProductsPageContent: React.FC = () => {
         {/* Filters and Sort */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-4">
+            {/* Search */}
+            <div className="relative flex items-center gap-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applySearch(); }}
+                  placeholder="Search products..."
+                  className="pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <button
+                onClick={applySearch}
+                className="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:bg-gray-100 transition"
+                aria-label="Apply search"
+              >
+                Search
+              </button>
+            </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mr-2">Sort by:</label>
               <select
@@ -154,25 +194,12 @@ const ProductsPageContent: React.FC = () => {
           </div>
         )}
         
-        {/* Products Grid */}
-        {!isLoading && !error && (
+        {/* Products Grid (hidden if no results) */}
+        {!isLoading && !error && filteredProducts.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
-          </div>
-        )}
-
-        {/* No products found */}
-        {!isLoading && !error && filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8l-4 4m0 0l-4-4m4 4V3" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-600">Try adjusting your filters or browse all products.</p>
           </div>
         )}
         </div>

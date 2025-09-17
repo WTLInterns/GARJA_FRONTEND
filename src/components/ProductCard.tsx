@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types/product";
 import { useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Props = {
   product: Product;
@@ -35,6 +36,7 @@ const calcDiscount = (
 };
 
 export default function ProductCard({ product, className = "" }: Props) {
+  const { isAuthenticated } = useAuth();
   const discount = useMemo(
     () => calcDiscount(product.price, product.originalPrice, (product as any).discountPercent),
     [product]
@@ -42,6 +44,17 @@ export default function ProductCard({ product, className = "" }: Props) {
 
   // Truncate description to 2 lines similar to reference UI
   const description = product.description || "";
+
+  const handleWishlistClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      window.dispatchEvent(new CustomEvent('auth:open', { detail: { mode: 'login' } }));
+      return;
+    }
+    // If authenticated, navigate to wishlist page for now
+    window.location.href = '/wishlist';
+  };
 
   return (
     <Link href={`/product/${product.id}`} className={`group block ${className}`}> 
@@ -64,6 +77,18 @@ export default function ProductCard({ product, className = "" }: Props) {
             </svg>
             <span className="text-xs font-semibold text-gray-900">{product.rating?.toFixed(1) ?? "4.2"}</span>
           </div>
+
+          {/* Wishlist button top-right */}
+          <button
+            aria-label="Add to wishlist"
+            title="Wishlist"
+            onClick={handleWishlistClick}
+            className="absolute right-2 top-2 z-10 h-9 w-9 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow flex items-center justify-center hover:bg-white"
+          >
+            <svg className="w-5 h-5 text-gray-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+            </svg>
+          </button>
         </div>
 
         {/* Content */}

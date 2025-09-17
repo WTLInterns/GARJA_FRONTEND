@@ -93,7 +93,8 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = async () => {
     if (!user) {
-      router.push('/?login=true&redirect=' + encodeURIComponent(window.location.pathname));
+      // Open global auth modal instead of redirecting away
+      window.dispatchEvent(new CustomEvent('auth:open', { detail: { mode: 'login' } }));
       return;
     }
 
@@ -119,7 +120,7 @@ const ProductDetailPage: React.FC = () => {
 
   const handleBuyNow = async () => {
     if (!user) {
-      router.push('/?login=true&redirect=' + encodeURIComponent('/checkout'));
+      window.dispatchEvent(new CustomEvent('auth:open', { detail: { mode: 'login' } }));
       return;
     }
     if (!product) return;
@@ -132,7 +133,7 @@ const ProductDetailPage: React.FC = () => {
   const handleToggleWishlist = async () => {
     try {
       if (!user) {
-        router.push('/?login=true&redirect=' + encodeURIComponent(window.location.pathname));
+        window.dispatchEvent(new CustomEvent('auth:open', { detail: { mode: 'login' } }));
         return;
       }
       if (!product) return;
@@ -375,7 +376,7 @@ const ProductDetailPage: React.FC = () => {
                 aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                 onClick={handleToggleWishlist}
                 disabled={wlLoading}
-                className={`hidden sm:flex h-14 w-14 rounded-full border items-center justify-center ${isWishlisted ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'} hover:bg-gray-50`}
+                className={`flex h-14 w-14 rounded-full border items-center justify-center ${isWishlisted ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'} hover:bg-gray-50`}
                 title={isWishlisted ? 'In wishlist' : 'Add to wishlist'}
               >
                 <svg className={`w-5 h-5 sm:w-6 sm:h-6 ${isWishlisted ? 'text-red-600' : 'text-gray-700'}`} viewBox="0 0 24 24" fill={isWishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">

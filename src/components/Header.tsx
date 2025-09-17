@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import AuthModal from './AuthModal';
 import UserDropdown from './UserDropdown';
 import CartSidebar from './CartSidebar';
 import Link from 'next/link'; // ✅ added for Wishlist
+import SearchResultsModal from './SearchResultsModal';
 
 const Header = () => {
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
@@ -15,7 +16,9 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, isLoading } = useAuth();
   const { state: cartState, toggleCart } = useCart();
 
@@ -55,8 +58,41 @@ const Header = () => {
     setIsAuthModalOpen(false);
   };
 
+  // Open modal if URL contains ?login=true
+  useEffect(() => {
+    const loginParam = searchParams?.get('login');
+    if (loginParam === 'true') {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      // Remove the login param so the modal doesn't keep reopening on navigation
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('login');
+        const newUrl = url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : '') + url.hash;
+        window.history.replaceState({}, '', newUrl);
+      } catch {}
+    }
+  }, [searchParams]);
+
+  // Listen for global auth open events so pages can request login modal
+  useEffect(() => {
+    const handler = (e: Event) => {
+      try {
+        const detail = (e as CustomEvent).detail || {};
+        const desiredMode = detail.mode === 'signup' ? 'signup' : 'login';
+        setAuthModalMode(desiredMode);
+        setIsAuthModalOpen(true);
+      } catch {
+        setAuthModalMode('login');
+        setIsAuthModalOpen(true);
+      }
+    };
+    window.addEventListener('auth:open', handler as EventListener);
+    return () => window.removeEventListener('auth:open', handler as EventListener);
+  }, []);
+
   const categories = [
-    { name: "What's New", isActive: true, href: "/#whats-new-today" },
+    { name: "All", isActive: true, href: "/products" },
     { name: "T-Shirts", isActive: true, href: "/products?category=t-shirts" },
     { name: "Hoodies", isActive: true, href: "/products?category=hoodies" },
     { name: "Shirts", isActive: false, href: "#", label: "Coming Soon" },
@@ -170,7 +206,7 @@ const Header = () => {
 
             {/* Right - Navigation Icons + Page Links */}
             <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-8">
-              <button className="hidden sm:flex items-center space-x-2 text-black hover:text-gray-700 transition-all duration-200 cursor-pointer group hover:scale-105">
+              <button onClick={() => setIsSearchOpen(true)} className="hidden sm:flex items-center space-x-2 text-black hover:text-gray-700 transition-all duration-200 cursor-pointer group hover:scale-105">
                 <div className="p-2 rounded-full group-hover:bg-gray-100 transition-all duration-200">
                   <svg className="w-5 h-5 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -322,6 +358,9 @@ const Header = () => {
         setAuthModalMode('login');
         setIsAuthModalOpen(true);
       }} />
+
+      {/* Search Modal */}
+      <SearchResultsModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 };

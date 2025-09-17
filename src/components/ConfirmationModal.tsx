@@ -46,14 +46,15 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop: semi-transparent so background page stays visible */}
       <div 
-        className="fixed inset-0 z-50 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 z-[1000] bg-black/50 transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
       
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
         <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
           <div className="p-6">
             <div className="flex items-start">
@@ -73,7 +74,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 </svg>
               </div>
               <div className="ml-4 text-center sm:text-left w-full">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 id="confirm-modal-title" className="text-lg font-medium text-gray-900 mb-2">
                   {title}
                 </h3>
                 <p className="text-sm text-gray-500">
