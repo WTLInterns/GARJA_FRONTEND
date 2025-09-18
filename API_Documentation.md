@@ -4,7 +4,7 @@
 The Garja Backend is a Spring Boot REST API for managing products, user authentication, and administrative functions. This documentation provides comprehensive details for all available endpoints, including request/response schemas, error codes, and ready-to-use cURL commands for Postman.
 
 ## Base Configuration
-- **Base URL**: `http://localhost:8085`
+- **Base URL**: `https://api.mygarja.com`
 - **Database**: MySQL (localhost:3306/garja)
 - **Authentication**: JWT Bearer Token
 - **Content-Type**: `application/json` (except file uploads)
@@ -76,7 +76,7 @@ The Garja Backend is a Spring Boot REST API for managing products, user authenti
 
 ### cURL Command
 ```bash
-curl -X POST http://localhost:8085/auth/signup \
+curl -X POST https://api.mygarja.com/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -131,7 +131,7 @@ curl -X POST http://localhost:8085/auth/signup \
 
 ### cURL Command
 ```bash
-curl -X POST http://localhost:8085/auth/login \
+curl -X POST https://api.mygarja.com/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -183,7 +183,7 @@ Content-Type: application/json
 
 ### cURL Command
 ```bash
-curl -X POST http://localhost:8085/common/reset-password \
+curl -X POST https://api.mygarja.com/common/reset-password \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -244,7 +244,7 @@ Content-Type: multipart/form-data
 
 ### cURL Command
 ```bash
-curl -X POST http://localhost:8085/admin/addProduct \
+curl -X POST https://api.mygarja.com/admin/addProduct \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -F "productName=T-Shirt" \
   -F "price=29.99" \
@@ -297,7 +297,7 @@ Same as Add Product endpoint.
 
 ### cURL Command
 ```bash
-curl -X PUT http://localhost:8085/admin/updateProduct/1 \
+curl -X PUT https://api.mygarja.com/admin/updateProduct/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -F "productName=Updated T-Shirt" \
   -F "price=34.99" \
@@ -343,7 +343,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### cURL Command
 ```bash
-curl -X DELETE http://localhost:8085/admin/deleteProduct/1 \
+curl -X DELETE https://api.mygarja.com/admin/deleteProduct/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -393,7 +393,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### cURL Command
 ```bash
-curl -X GET http://localhost:8085/admin/getAllProducts \
+curl -X GET https://api.mygarja.com/admin/getAllProducts \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -449,7 +449,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### cURL Command
 ```bash
-curl -X GET "http://localhost:8085/admin/getProductByCategory?category=Apparel" \
+curl -X GET "https://api.mygarja.com/admin/getProductByCategory?category=Apparel" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -499,7 +499,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### cURL Command
 ```bash
-curl -X GET http://localhost:8085/admin/getLatestProducts \
+curl -X GET https://api.mygarja.com/admin/getLatestProducts \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -512,7 +512,7 @@ Create these environment variables in Postman:
 
 ```json
 {
-  "baseUrl": "http://localhost:8085",
+  "baseUrl": "https://api.mygarja.com",
   "jwtToken": "{{AUTH_TOKEN}}"
 }
 ```

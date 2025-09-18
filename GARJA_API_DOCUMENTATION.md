@@ -3,7 +3,7 @@
 ## Overview
 The GARJA API is a RESTful e-commerce backend built with Spring Boot that provides comprehensive functionality for user authentication, product management, shopping cart operations, order processing, and wishlist management.
 
-**Base URL:** `http://localhost:8085`
+**Base URL:** `https://api.mygarja.com`
 **Version:** 1.0.0
 **Authentication:** Bearer JWT Token
 
@@ -317,7 +317,7 @@ Get statistics about users and their orders.
 # GARJA E-Commerce API Documentation
 
 ## Base URL
-`http://localhost:8085`
+`https://api.mygarja.com`
 
 ## Authentication
 All user endpoints require JWT token in the Authorization header:
@@ -704,7 +704,7 @@ CREATE DATABASE garja;
 
 **Register User:**
 ```bash
-curl -X POST http://localhost:8085/auth/signup \
+curl -X POST https://api.mygarja.com/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -718,7 +718,7 @@ curl -X POST http://localhost:8085/auth/signup \
 
 **Login:**
 ```bash
-curl -X POST http://localhost:8085/auth/login \
+curl -X POST https://api.mygarja.com/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -728,12 +728,12 @@ curl -X POST http://localhost:8085/auth/login \
 
 **Get Products:**
 ```bash
-curl -X GET http://localhost:8085/public/getAllProducts
+curl -X GET https://api.mygarja.com/public/getAllProducts
 ```
 
 **Add to Cart (with token):**
 ```bash
-curl -X POST "http://localhost:8085/user/cart/add/1?quantity=2" \
+curl -X POST "https://api.mygarja.com/user/cart/add/1?quantity=2" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 

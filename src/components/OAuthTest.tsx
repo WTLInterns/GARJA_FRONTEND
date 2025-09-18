@@ -18,7 +18,7 @@ const OAuthTest: React.FC = () => {
     try {
       // Test 1: Check if backend is running
       addResult('Testing backend server connection...');
-      const response = await fetch('http://localhost:8085/auth/oauth2/success');
+      const response = await fetch('https://api.mygarja.com/auth/oauth2/success');
       
       if (response.ok) {
         addResult('✅ Backend server is running and reachable');
@@ -33,7 +33,7 @@ const OAuthTest: React.FC = () => {
     try {
       // Test 2: Check OAuth endpoint
       addResult('Testing OAuth endpoint...');
-      const oauthResponse = await fetch('http://localhost:8085/auth/google', {
+      const oauthResponse = await fetch('https://api.mygarja.com/auth/google', {
         method: 'GET',
         redirect: 'manual' // Don't follow redirects
       });
@@ -52,12 +52,12 @@ const OAuthTest: React.FC = () => {
 
   const testDirectOAuth = () => {
     addResult('Testing direct OAuth redirect...');
-    window.location.href = 'http://localhost:8085/auth/google';
+    window.location.href = 'https://api.mygarja.com/auth/google';
   };
 
   const testSpringOAuth = () => {
     addResult('Testing Spring OAuth2 endpoint...');
-    window.location.href = 'http://localhost:8085/oauth2/authorization/google';
+    window.location.href = 'https://api.mygarja.com/oauth2/authorization/google';
   };
 
   return (

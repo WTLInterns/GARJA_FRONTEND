@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mygarja.com';
 
 export interface AddressRequest {
   steet: string;

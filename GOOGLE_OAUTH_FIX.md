@@ -19,7 +19,7 @@ Your Google OAuth is still showing "Choose an account to continue to Udemy" inst
    ```
    Application name: Garja (change from "Udemy")
    User support email: your-email@gmail.com
-   Application home page: http://localhost:3000
+   Application home page: https://mygarja.com
    Application privacy policy: (optional)
    Application terms of service: (optional)
    ```
@@ -45,13 +45,13 @@ Your Google OAuth is still showing "Choose an account to continue to Udemy" inst
 
 2. **Update Authorized JavaScript Origins**:
    ```
-   http://localhost:3000
-   http://localhost:8085
+   https://mygarja.com
+   https://api.mygarja.com
    ```
 
 3. **Update Authorized Redirect URIs**:
    ```
-   http://localhost:8085/login/oauth2/code/google
+   https://api.mygarja.com/login/oauth2/code/google
    ```
 
 4. **Click SAVE**
@@ -80,7 +80,7 @@ Your Google OAuth is still showing "Choose an account to continue to Udemy" inst
    ```
 
 2. **Test in browser**:
-   - Go to `http://localhost:3000`
+   - Go to `https://mygarja.com`
    - Click "Continue with Google"
    - Should now show "Choose an account to continue to Garja"
 
@@ -111,8 +111,8 @@ If the issue persists, create a new OAuth 2.0 Client ID:
    - Click `+ CREATE CREDENTIALS` → `OAuth 2.0 Client ID`
    - Application type: `Web application`
    - Name: `Garja OAuth Client`
-   - Authorized JavaScript origins: `http://localhost:3000`, `http://localhost:8085`
-   - Authorized redirect URIs: `http://localhost:8085/login/oauth2/code/google`
+   - Authorized JavaScript origins: `https://mygarja.com`, `https://api.mygarja.com`
+   - Authorized redirect URIs: `https://api.mygarja.com/login/oauth2/code/google`
 
 2. **Update Backend Configuration**:
    ```properties

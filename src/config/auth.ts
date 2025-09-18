@@ -3,17 +3,17 @@ export const authConfig = {
   // Backend OAuth endpoints with prompt=select_account to force account selection
   googleOAuthUrl: process.env.NEXT_PUBLIC_BACKEND_URL 
     ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`
-    : 'http://localhost:8085/auth/google',
+    : 'https://api.mygarja.com/auth/google',
   
   // Frontend callback URL
   callbackUrl: process.env.NEXT_PUBLIC_FRONTEND_URL
     ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}/auth/callback`
-    : 'http://localhost:3000/auth/callback',
+    : 'https://mygarja.com/auth/callback',
   
   // Home page redirect
   homeUrl: process.env.NEXT_PUBLIC_FRONTEND_URL
     ? process.env.NEXT_PUBLIC_FRONTEND_URL
-    : 'http://localhost:3000',
+    : 'https://mygarja.com',
   
   // OAuth provider settings
   providers: {

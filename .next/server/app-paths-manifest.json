@@ -1,6 +1,5 @@
 {
   "/page": "app/page.js",
   "/auth/callback/page": "app/auth/callback/page.js",
-  "/products/page": "app/products/page.js",
-  "/wishlist/page": "app/wishlist/page.js"
+  "/products/page": "app/products/page.js"
 }

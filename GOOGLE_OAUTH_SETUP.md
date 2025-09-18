@@ -23,7 +23,7 @@ The Google Sign-In popup shows "Choose an account to continue to Udemy" instead 
    - **Application name**: Change from "Udemy" to "Garja" (or your preferred name)
    - **User support email**: Your email address
    - **Application logo**: Upload your app logo (optional but recommended)
-   - **Application home page**: `http://localhost:3000` (for development)
+   - **Application home page**: `https://mygarja.com` (for development)
    - **Application privacy policy link**: Add if you have one
    - **Application terms of service link**: Add if you have one
 
@@ -39,13 +39,13 @@ The Google Sign-In popup shows "Choose an account to continue to Udemy" instead 
 3. Click the edit (pencil) icon
 4. **Authorized JavaScript origins**:
    ```
-   http://localhost:3000
-   http://localhost:8085
+   https://mygarja.com
+   https://api.mygarja.com
    ```
 5. **Authorized redirect URIs**:
    ```
-   http://localhost:8085/login/oauth2/code/google
-   http://localhost:3000/auth/callback
+   https://api.mygarja.com/login/oauth2/code/google
+   https://mygarja.com/auth/callback
    ```
 
 ### 2. Backend Configuration (Already Correct)
@@ -55,7 +55,7 @@ Your `application.properties` file is correctly configured:
 spring.security.oauth2.client.registration.google.client-id=606555135455-pc77hp4d76nrt9op7noskv55b2joe453.apps.googleusercontent.com
 spring.security.oauth2.client.registration.google.client-secret=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
 spring.security.oauth2.client.registration.google.scope=openid,profile,email
-spring.security.oauth2.client.registration.google.redirect-uri=http://localhost:8085/login/oauth2/code/google
+spring.security.oauth2.client.registration.google.redirect-uri=https://api.mygarja.com/login/oauth2/code/google
 ```
 
 ### 3. Frontend Configuration (Updated)
@@ -117,8 +117,8 @@ The frontend has been updated with:
 
 Make sure your `.env.local` file contains:
 ```env
-NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8085
+NEXT_PUBLIC_FRONTEND_URL=https://mygarja.com
+NEXT_PUBLIC_BACKEND_URL=https://api.mygarja.com
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=606555135455-pc77hp4d76nrt9op7noskv55b2joe453.apps.googleusercontent.com
 ```
 

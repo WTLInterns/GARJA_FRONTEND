@@ -23,13 +23,13 @@ This error occurs when Google OAuth configuration doesn't match between:
 
 #### C. Update Authorized JavaScript Origins
 ```
-http://localhost:3000
-http://localhost:8085
+https://mygarja.com
+https://api.mygarja.com
 ```
 
 #### D. Update Authorized Redirect URIs (CRITICAL)
 ```
-http://localhost:8085/login/oauth2/code/google
+https://api.mygarja.com/login/oauth2/code/google
 ```
 
 **IMPORTANT**: Make sure there are NO extra spaces or characters!
@@ -47,7 +47,7 @@ Click **SAVE** button
 ```
 Application name: Garja
 User support email: your-email@gmail.com
-Application home page: http://localhost:3000
+Application home page: https://mygarja.com
 ```
 
 #### C. Add Test Users (If in Testing Mode)
@@ -68,7 +68,7 @@ Your `application.properties` should have:
 spring.security.oauth2.client.registration.google.client-id=606555135455-pc77hp4d76nrt9op7noskv55b2joe453.apps.googleusercontent.com
 spring.security.oauth2.client.registration.google.client-secret=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
 spring.security.oauth2.client.registration.google.scope=openid,profile,email
-spring.security.oauth2.client.registration.google.redirect-uri=http://localhost:8085/login/oauth2/code/google
+spring.security.oauth2.client.registration.google.redirect-uri=https://api.mygarja.com/login/oauth2/code/google
 ```
 
 ### Step 4: Test the Fixed Implementation
@@ -85,7 +85,7 @@ npm run dev
 ```
 
 #### B. Test OAuth Flow
-1. Go to: `http://localhost:3000/test-oauth`
+1. Go to: `https://mygarja.com/test-oauth`
 2. Click "Continue with Google"
 3. Should redirect to Google OAuth screen
 4. Should show "Choose an account to continue to Garja"
@@ -101,12 +101,12 @@ If the error persists, create a fresh OAuth client:
 4. Name: `Garja OAuth Client`
 5. Authorized JavaScript origins:
    ```
-   http://localhost:3000
-   http://localhost:8085
+   https://mygarja.com
+   https://api.mygarja.com
    ```
 6. Authorized redirect URIs:
    ```
-   http://localhost:8085/login/oauth2/code/google
+   https://api.mygarja.com/login/oauth2/code/google
    ```
 7. Click **CREATE**
 
@@ -121,7 +121,7 @@ spring.security.oauth2.client.registration.google.client-secret=NEW_CLIENT_SECRE
 
 ### Issue 1: "redirect_uri_mismatch"
 **Solution**: Ensure redirect URI matches exactly:
-- `http://localhost:8085/login/oauth2/code/google`
+- `https://api.mygarja.com/login/oauth2/code/google`
 - No trailing slashes
 - Correct port number
 

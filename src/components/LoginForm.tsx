@@ -120,7 +120,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-200"
             disabled={isLoading}
           >
-            {showPassword ? (
+            {showPassword ? (    
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
               </svg>
@@ -132,15 +132,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             )}
           </button>
         </div>
-        {errors.password && (
+        {errors.password && (                                                 
           <p className="mt-1 text-sm text-red-600">{errors.password}</p>
         )}
       </div>
 
       {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={isLoading}
+      <button                
+        type="submit"                     
+        disabled={isLoading}                    
         className="w-full bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition-all duration-200 font-medium tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? (
@@ -166,12 +166,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         </div>
       </div>
 
-      {/* Google Sign In Button */}
+      {/* Google Sign In Button */}   
       <GoogleOAuthButton disabled={isLoading} />
 
-      {/* Forgot Password Link */}
-      <div className="text-center">
-        <button
+      {/* Forgot Password Link */}              
+      <div className="text-center">  
+        <button                                 
           type="button"
           className="text-sm text-gray-600 hover:text-black transition-colors duration-200 underline underline-offset-2"
           disabled={isLoading}

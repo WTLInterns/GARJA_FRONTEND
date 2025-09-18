@@ -15,7 +15,7 @@ export default function TestOAuthPage() {
     addResult('Testing backend OAuth endpoint...');
 
     try {
-      const response = await fetch('http://localhost:8085/oauth2/authorization/google', {
+      const response = await fetch('https://api.mygarja.com/oauth2/authorization/google', {
         method: 'GET',
         redirect: 'manual'
       });
@@ -33,7 +33,7 @@ export default function TestOAuthPage() {
 
   const testDirectOAuth = () => {
     addResult('Testing direct OAuth redirect...');
-    window.location.href = 'http://localhost:8085/oauth2/authorization/google?prompt=select_account';
+    window.location.href = 'https://api.mygarja.com/oauth2/authorization/google?prompt=select_account';
   };
 
   return (
@@ -50,7 +50,7 @@ export default function TestOAuthPage() {
             <ol className="list-decimal list-inside text-sm text-red-700 space-y-1">
               <li>Go to Google Cloud Console</li>
               <li>Update OAuth consent screen (change app name from "Udemy" to "Garja")</li>
-              <li>Add redirect URI: http://localhost:8085/login/oauth2/code/google</li>
+              <li>Add redirect URI: https://api.mygarja.com/login/oauth2/code/google</li>
               <li>Add your email as test user</li>
             </ol>
           </div>

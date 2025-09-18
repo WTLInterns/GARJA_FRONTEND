@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mygarja.com';
 
 // Product type based on actual API response
 export interface ApiProduct {
@@ -255,7 +255,7 @@ export const publicProductService = {
     try {
       // For now, using mock data since public endpoint doesn't exist
       // Replace this with actual public API call when available
-      const response = await fetch('http://localhost:8085/api/products');
+      const response = await fetch('https://api.mygarja.com/api/products');
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
