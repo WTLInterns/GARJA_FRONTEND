@@ -51,7 +51,7 @@ Create `.env.local` in the project root. Example:
 
 ```
 # Base API URL for all product and order requests
-NEXT_PUBLIC_API_URL=https://api.mygarja.com
+NEXT_PUBLIC_API_URL=http://localhost:8085
 
 # Razorpay (example/test key). Do NOT commit real secrets.
 NEXT_PUBLIC_RAZORPAY_KEY_ID=your_public_key
@@ -142,7 +142,7 @@ App Router pages in `src/app/`:
 ## Services and APIs
 
 Most API calls are implemented under `src/services/` using Axios.
-- Base URL derives from `process.env.NEXT_PUBLIC_API_URL` with a default `https://api.mygarja.com` (see `src/services/productService.ts`).
+- Base URL derives from `process.env.NEXT_PUBLIC_API_URL` with a default `http://localhost:8085` (see `src/services/productService.ts`).
 - Public endpoints example (from `productService.ts`):
   - `GET /public/getAllProducts`
   - `GET /public/getProductByCategory?category=...`

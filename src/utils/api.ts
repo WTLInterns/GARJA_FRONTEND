@@ -35,7 +35,7 @@ export interface LoginData {
 
 // Create axios instance with base configuration
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://api.mygarja.com',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085',
   timeout: 30000,
 });
 

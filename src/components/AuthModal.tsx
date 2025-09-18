@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import LoginForm from './LoginForm';
+import SignupForm from './SignupForm';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -12,46 +14,12 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) => {
   const [mode, setMode] = React.useState<'login' | 'signup'>(initialMode);
-  const { login, signup } = useAuth();
-
-  // Signup form state
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    password: '',
-    role: 'USER'
-  });
-
-  // Login form state
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: ''
-  });
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Reset mode when modal opens
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
-      // Reset form data when modal opens
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phoneNumber: '',
-        password: '',
-        role: 'USER'
-      });
-      setLoginData({
-        email: '',
-        password: ''
-      });
-      setError('');
       setShowSuccess(false);
     }
   }, [isOpen, initialMode]);
@@ -76,23 +44,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     };
   }, [isOpen, onClose]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (error) setError('');
-  };
-
-  const handleLoginInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setLoginData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (error) setError('');
-  };
 
   // Play success sound function
   const playSuccessSound = () => {
@@ -133,70 +84,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     }
   };
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const result = await login(loginData.email, loginData.password);
-      if (result.success) {
-        // Play success sound
-        playSuccessSound();
-        // Login successful - call onAuthSuccess or close modal
-        if (onAuthSuccess) {
-          onAuthSuccess();
-        } else {
-          onClose();
-        }
-      } else {
-        setError(result.error || 'Login failed. Please try again.');
-      }
-    } catch (error) {
-      setError('An error occurred during login. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const result = await signup(
-        formData.firstName,
-        formData.lastName,
-        formData.email,
-        formData.phoneNumber,
-        formData.password,
-        formData.role as 'USER' | 'ADMIN'
-      );
-
-      if (result.success) {
-        // Show success message and play sound
-        setShowSuccess(true);
-        playSuccessSound();
-
-        // User is automatically logged in after signup
-        // Call onAuthSuccess callback if provided, then close modal after 2 seconds
-        setTimeout(() => {
-          if (onAuthSuccess) {
-            onAuthSuccess();
-          } else {
-            onClose();
-          }
-        }, 2000);
-      } else {
-        setError(result.error || 'Signup failed. Please try again.');
-      }
-    } catch (error) {
-      setError('An error occurred during signup. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -208,7 +95,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
   const switchMode = () => {
     setMode(mode === 'login' ? 'signup' : 'login');
-    setError(''); // Clear errors when switching modes
     setShowSuccess(false); // Clear success message
   };
 
@@ -282,114 +168,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         {/* Modal Body */}
         <div className="px-6 py-6 bg-white/5 backdrop-blur-sm">
           {mode === 'login' ? (
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                  {error}
-                </div>
-              )}
-              
-              <input
-                type="email"
-                name="email"
-                required
-                value={loginData.email}
-                onChange={handleLoginInputChange}
-                placeholder="Email Address"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              />
-              <input
-                type="password"
-                name="password"
-                required
-                value={loginData.password}
-                onChange={handleLoginInputChange}
-                placeholder="Password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              />
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full py-2 px-4 rounded-md font-medium transition-colors ${
-                  isLoading
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-black text-white hover:bg-gray-800'
-                }`}
-              >
-                {isLoading ? 'Signing In...' : 'Sign In'}
-              </button>
-            </form>
+            <LoginForm onSuccess={() => {
+              playSuccessSound();
+              if (onAuthSuccess) {
+                onAuthSuccess();
+              } else {
+                onClose();
+              }
+            }} />
           ) : (
-            <form onSubmit={handleSignupSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                  {error}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  name="firstName"
-                  required
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  placeholder="First Name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                />
-
-                <input
-                  type="text"
-                  name="lastName"
-                  required
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  placeholder="Last Name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                />
-              </div>
-
-              <input
-                type="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Email Address"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              />
-
-              <input
-                type="tel"
-                name="phoneNumber"
-                required
-                value={formData.phoneNumber}
-                onChange={handleInputChange}
-                placeholder="Phone Number"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              />
-
-              <input
-                type="password"
-                name="password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="Password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              />
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full py-2 px-4 rounded-md font-medium transition-colors ${isLoading
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-black text-white hover:bg-gray-800'
-                  }`}
-              >
-                {isLoading ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </form>
+            <SignupForm onSuccess={() => {
+              setShowSuccess(true);
+              playSuccessSound();
+              setTimeout(() => {
+                if (onAuthSuccess) {
+                  onAuthSuccess();
+                } else {
+                  onClose();
+                }
+              }, 2000);
+            }} />
           )}
         </div>
 

@@ -22,16 +22,29 @@ export interface AuthContextType {
   signup: (firstName: string, lastName: string, email: string, phoneNumber: string, password: string, role?: 'USER' | 'ADMIN') => Promise<{ success: boolean; error?: string }>;
   resetPassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  setToken: (token: string) => Promise<void>;
 }
 
+// Create a default context value
+const defaultContextValue: AuthContextType = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
+  login: async () => ({ success: false, error: 'AuthProvider not available' }),
+  signup: async () => ({ success: false, error: 'AuthProvider not available' }),
+  resetPassword: async () => ({ success: false, error: 'AuthProvider not available' }),
+  logout: () => {},
+  setToken: async () => {}
+};
+
 // Create the context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>(defaultContextValue);
 
 // Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (context === defaultContextValue) {
+    console.warn('useAuth is being used outside of AuthProvider, using default values');
   }
   return context;
 };
@@ -253,6 +266,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Set token function (for OAuth2 callback)
+  const setToken = async (token: string): Promise<void> => {
+    try {
+      // Decode the JWT token to get user info
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      // Create a user object from the token payload
+      const authUser: AuthUser = {
+        id: parseInt(payload.sub) || 0,
+        firstName: payload.firstName || '',
+        lastName: payload.lastName || '',
+        email: payload.sub || payload.email || '',
+        phoneNumber: payload.phoneNumber || '',
+        role: payload.role || 'USER',
+        token: token
+      };
+      
+      // Save auth data to localStorage
+      authStorage.saveAuth({ token, user: authUser });
+      
+      // Convert AuthUser to User format and set user
+      const user = convertAuthUserToUser(authUser);
+      setUser(user);
+    } catch (error) {
+      console.error('Error setting token:', error);
+      throw error;
+    }
+  };
+
   // Logout function
   const logout = () => {
     setUser(null);
@@ -266,7 +308,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     signup,
     resetPassword,
-    logout
+    logout,
+    setToken
   };
 
   return (
