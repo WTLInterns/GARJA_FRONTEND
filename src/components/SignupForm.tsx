@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import GoogleSignInButton from './GoogleSignInButton';
+import GoogleOAuthButton from './GoogleOAuthButton';
 
 interface SignupFormProps {
   onSuccess: () => void;
@@ -316,7 +316,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess }) => {
       </div>
 
       {/* Google Sign In Button */}
-      <GoogleSignInButton text="Sign up with Google" disabled={isLoading} />
+      <GoogleOAuthButton text="Sign up with Google" disabled={isLoading} />
 
       {/* Terms and Privacy */}
       <div className="text-center">

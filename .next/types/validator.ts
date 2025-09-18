@@ -113,6 +113,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/checkout">
 }
 
+// Validate ../../src/app/oauth-test/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/oauth-test/page.js")
+  handler satisfies AppPageConfig<"/oauth-test">
+}
+
 // Validate ../../src/app/order-success/page.tsx
 {
   const handler = {} as typeof import("../../src/app/order-success/page.js")
@@ -141,6 +147,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   const handler = {} as typeof import("../../src/app/products/page.js")
   handler satisfies AppPageConfig<"/products">
+}
+
+// Validate ../../src/app/test-oauth/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/test-oauth/page.js")
+  handler satisfies AppPageConfig<"/test-oauth">
 }
 
 // Validate ../../src/app/test-storage/page.tsx

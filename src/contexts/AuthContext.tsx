@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiService, AuthUser, SignupData, LoginData } from '@/utils/api';
 import { authStorage } from '@/utils/authStorage';
+import { debugJWT, validateJWTStructure } from '@/utils/jwtDebug';
 import { AxiosError } from 'axios';
 
 // Types for authentication
@@ -268,18 +269,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Set token function (for OAuth2 callback)
   const setToken = async (token: string): Promise<void> => {
+    setIsLoading(true);
+    
     try {
-      // Decode the JWT token to get user info
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('Processing OAuth2 token...');
       
-      // Create a user object from the token payload
+      // Simple JWT decode without external dependencies
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('JWT payload:', payload);
+      
+      // Extract user information from JWT payload
+      const email = payload.sub || payload.email;
+      
+      if (!email) {
+        throw new Error('No email found in token');
+      }
+      
+      if (!payload.id) {
+        throw new Error('No user ID found in token');
+      }
+      
+      // Create user object from JWT payload
       const authUser: AuthUser = {
-        id: parseInt(payload.sub) || 0,
-        firstName: payload.firstName || '',
+        id: payload.id,
+        firstName: payload.firstName || email.split('@')[0],
         lastName: payload.lastName || '',
-        email: payload.sub || payload.email || '',
+        email: email,
         phoneNumber: payload.phoneNumber || '',
-        role: payload.role || 'USER',
+        role: (payload.role as 'USER' | 'ADMIN') || 'USER',
         token: token
       };
       
@@ -289,9 +306,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Convert AuthUser to User format and set user
       const user = convertAuthUserToUser(authUser);
       setUser(user);
+      
+      console.log('OAuth2 user authenticated successfully:', {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      });
     } catch (error) {
       console.error('Error setting token:', error);
-      throw error;
+      throw new Error(`Token processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
