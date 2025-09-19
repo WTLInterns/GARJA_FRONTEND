@@ -66,7 +66,7 @@ localhost
 Your `application.properties` should have:
 ```properties
 spring.security.oauth2.client.registration.google.client-id=606555135455-pc77hp4d76nrt9op7noskv55b2joe453.apps.googleusercontent.com
-spring.security.oauth2.client.registration.google.client-secret=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
+spring.security.oauth2.client.registration.google.client-secret=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
 spring.security.oauth2.client.registration.google.scope=openid,profile,email
 spring.security.oauth2.client.registration.google.redirect-uri=https://api.mygarja.com/login/oauth2/code/google
 ```
