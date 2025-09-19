@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
@@ -10,6 +10,27 @@ import CartSidebar from './CartSidebar';
 import Link from 'next/link'; // ✅ added for Wishlist
 import SearchResultsModal from './SearchResultsModal';
 
+// Component that handles search params logic
+const SearchParamsHandler = ({ onOpenAuthModal }: { onOpenAuthModal: (mode: 'login' | 'signup') => void }) => {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const loginParam = searchParams?.get('login');
+    if (loginParam === 'true') {
+      onOpenAuthModal('login');
+      // Remove the login param so the modal doesn't keep reopening on navigation
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('login');
+        const newUrl = url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : '') + url.hash;
+        window.history.replaceState({}, '', newUrl);
+      } catch {}
+    }
+  }, [searchParams, onOpenAuthModal]);
+
+  return null;
+};
+
 const Header = () => {
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
   const [isFading, setIsFading] = useState(false);
@@ -18,7 +39,6 @@ const Header = () => {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { isAuthenticated, isLoading } = useAuth();
   const { state: cartState, toggleCart } = useCart();
 
@@ -58,21 +78,10 @@ const Header = () => {
     setIsAuthModalOpen(false);
   };
 
-  // Open modal if URL contains ?login=true
-  useEffect(() => {
-    const loginParam = searchParams?.get('login');
-    if (loginParam === 'true') {
-      setAuthModalMode('login');
-      setIsAuthModalOpen(true);
-      // Remove the login param so the modal doesn't keep reopening on navigation
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('login');
-        const newUrl = url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : '') + url.hash;
-        window.history.replaceState({}, '', newUrl);
-      } catch {}
-    }
-  }, [searchParams]);
+  const handleOpenAuthModal = (mode: 'login' | 'signup') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
 
   // Listen for global auth open events so pages can request login modal
   useEffect(() => {
@@ -106,6 +115,11 @@ const Header = () => {
 
   return (
     <header className="w-full bg-white shadow-sm">
+      {/* Search Params Handler wrapped in Suspense */}
+      <Suspense fallback={null}>
+        <SearchParamsHandler onOpenAuthModal={handleOpenAuthModal} />
+      </Suspense>
+      
       {/* Top Announcement Bar */}
       <div className="bg-gray-231 border-b border-gray-300 py-3 px-4 text-center">
         <p className={`text-sm text-black transition-opacity duration-1000 ease-in-out font-medium ${

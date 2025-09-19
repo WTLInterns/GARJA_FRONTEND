@@ -47,7 +47,7 @@ const ProductDetailPage: React.FC = () => {
   useEffect(() => {
     const loadProduct = async () => {
       setLoading(true);
-      const productId = params.id as string;
+      const productId = params?.id as string;
       
       try {
         // Fetch the specific product from backend
@@ -73,7 +73,7 @@ const ProductDetailPage: React.FC = () => {
     };
     
     loadProduct();
-  }, [params.id]);
+  }, [params?.id]);
 
   useEffect(() => {
     const initWishlist = async () => {

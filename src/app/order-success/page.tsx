@@ -8,9 +8,9 @@ import Footer from '@/components/Footer';
 
 const OrderSuccessContent: React.FC = () => {
   const searchParams = useSearchParams();
-  const paymentId = searchParams.get('payment_id');
-  const orderId = searchParams.get('order_id');
-  const paymentMethod = searchParams.get('payment_method');
+  const paymentId = searchParams?.get('payment_id');
+  const orderId = searchParams?.get('order_id');
+  const paymentMethod = searchParams?.get('payment_method');
   
   const [orderDetails, setOrderDetails] = useState({
     orderNumber: '',

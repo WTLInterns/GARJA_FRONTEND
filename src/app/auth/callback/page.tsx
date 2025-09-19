@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-const OAuth2CallbackPage = () => {
+// Component that handles the OAuth callback logic with search params
+const OAuth2CallbackContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
@@ -123,6 +124,22 @@ const OAuth2CallbackPage = () => {
         )}
       </div>
     </div>
+  );
+};
+
+// Main component that wraps the content in Suspense
+const OAuth2CallbackPage = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <OAuth2CallbackContent />
+    </Suspense>
   );
 };
 

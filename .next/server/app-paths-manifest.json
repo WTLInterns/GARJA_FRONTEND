@@ -1,5 +1,25 @@
 {
-  "/page": "app/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/create-order/route": "app/api/create-order/route.js",
+  "/account-settings/page": "app/account-settings/page.js",
   "/auth/callback/page": "app/auth/callback/page.js",
-  "/products/page": "app/products/page.js"
+  "/cart/page": "app/cart/page.js",
+  "/oauth-test/page": "app/oauth-test/page.js",
+  "/order-success/page": "app/order-success/page.js",
+  "/checkout/page": "app/checkout/page.js",
+  "/product/[id]/page": "app/product/[id]/page.js",
+  "/products/page": "app/products/page.js",
+  "/orders/page": "app/orders/page.js",
+  "/test-oauth/page": "app/test-oauth/page.js",
+  "/page": "app/page.js",
+  "/test-storage/page": "app/test-storage/page.js",
+  "/user/orders/page": "app/user/orders/page.js",
+  "/wishlist/page": "app/wishlist/page.js",
+  "/admin/analytics/page": "app/admin/analytics/page.js",
+  "/admin/customers/page": "app/admin/customers/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/orders/page": "app/admin/orders/page.js",
+  "/admin/products/page": "app/admin/products/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/admin/settings/page": "app/admin/settings/page.js"
 }

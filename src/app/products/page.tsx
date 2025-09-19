@@ -11,7 +11,7 @@ import ProductCard from '@/components/ProductCard';
 
 const ProductsPageContent: React.FC = () => {
   const searchParams = useSearchParams();
-  const category = searchParams.get('category');
+  const category = searchParams?.get('category');
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [sortBy, setSortBy] = useState('newest');
