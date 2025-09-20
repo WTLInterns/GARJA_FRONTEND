@@ -119,7 +119,7 @@ Make sure your `.env.local` file contains:
 ```env
 NEXT_PUBLIC_FRONTEND_URL=https://mygarja.com
 NEXT_PUBLIC_BACKEND_URL=https://api.mygarja.com
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=606555135455-pc77hp4d76nrt9op7noskv55b2joe453.apps.googleusercontent.com
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=365994825852-2qgkgd1p28pag5i9f1dgbpo5sdm3gn6p.apps.googleusercontent.com
 ```
 
 ### 7. Production Deployment
