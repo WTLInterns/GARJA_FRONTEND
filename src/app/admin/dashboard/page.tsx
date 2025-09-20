@@ -1,7 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { dashboardService, DashboardData } from '@/services/dashboardService';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,6 +32,34 @@ ChartJS.register(
 );
 
 const AdminDashboard = () => {
+  const router = useRouter();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    stats: {
+      totalRevenue: 0,
+      totalOrders: 0,
+      totalProducts: 0,
+      totalCustomers: 0,
+      revenueChange: 0,
+      ordersChange: 0,
+      productsChange: 0,
+      customersChange: 0
+    },
+    orderStatusDistribution: {
+      pending: 0,
+      confirmed: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0
+    },
+    monthlySales: [],
+    recentOrders: [],
+    topProducts: [],
+    isLoading: true,
+    error: null
+  });
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -36,13 +67,49 @@ const AdminDashboard = () => {
     day: 'numeric'
   });
 
-  // Chart data for dashboard
+  // Load dashboard data
+  useEffect(() => {
+    if (isAuthLoading) {
+      return;
+    }
+    
+    if (!isAuthenticated) {
+      console.log('Not authenticated, redirecting to admin login');
+      router.push('/admin');
+      return;
+    }
+
+    loadDashboardData();
+  }, [isAuthenticated, isAuthLoading, router]);
+
+  const loadDashboardData = async () => {
+    try {
+      setDashboardData(prev => ({ ...prev, isLoading: true, error: null }));
+      const data = await dashboardService.getDashboardData();
+      setDashboardData(data);
+    } catch (error: any) {
+      console.error('Failed to load dashboard data:', error);
+      setDashboardData(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error.message || 'Failed to load dashboard data'
+      }));
+      showNotification('error', error.message || 'Failed to load dashboard data');
+    }
+  };
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  // Chart data for dashboard - using real data
   const salesData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: dashboardData.monthlySales.map(item => item.month),
     datasets: [
       {
         label: 'Sales (₹)',
-        data: [45000, 52000, 48000, 61000, 55000, 67000],
+        data: dashboardData.monthlySales.map(item => item.revenue),
         borderColor: 'rgb(0, 0, 0)',
         backgroundColor: 'rgba(0, 0, 0, 0.1)',
         tension: 0.4,
@@ -51,21 +118,29 @@ const AdminDashboard = () => {
   };
 
   const ordersData = {
-    labels: ['Pending', 'Processing', 'Shipped', 'Delivered'],
+    labels: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
     datasets: [
       {
-        data: [23, 45, 67, 234],
+        data: [
+          dashboardData.orderStatusDistribution.pending,
+          dashboardData.orderStatusDistribution.confirmed,
+          dashboardData.orderStatusDistribution.shipped,
+          dashboardData.orderStatusDistribution.delivered,
+          dashboardData.orderStatusDistribution.cancelled
+        ],
         backgroundColor: [
           'rgba(156, 163, 175, 0.8)',
           'rgba(251, 191, 36, 0.8)',
           'rgba(59, 130, 246, 0.8)',
           'rgba(34, 197, 94, 0.8)',
+          'rgba(239, 68, 68, 0.8)',
         ],
         borderColor: [
           'rgb(156, 163, 175)',
           'rgb(251, 191, 36)',
           'rgb(59, 130, 246)',
           'rgb(34, 197, 94)',
+          'rgb(239, 68, 68)',
         ],
         borderWidth: 2,
       },
@@ -109,85 +184,142 @@ const AdminDashboard = () => {
     },
   };
 
-  // Mock data for dashboard stats
+  // Real data for dashboard stats
   const stats = [
     {
       name: 'Total Revenue',
-      value: '₹2,45,678',
-      change: '+12.5%',
-      changeType: 'increase',
+      value: dashboardService.formatCurrency(dashboardData.stats.totalRevenue),
+      change: dashboardService.formatPercentage(dashboardData.stats.revenueChange),
+      changeType: dashboardData.stats.revenueChange >= 0 ? 'increase' : 'decrease',
       icon: '💰'
     },
     {
       name: 'Total Orders',
-      value: '1,234',
-      change: '+8.2%',
-      changeType: 'increase',
+      value: dashboardData.stats.totalOrders.toLocaleString(),
+      change: dashboardService.formatPercentage(dashboardData.stats.ordersChange),
+      changeType: dashboardData.stats.ordersChange >= 0 ? 'increase' : 'decrease',
       icon: '🛍️'
     },
     {
       name: 'Total Products',
-      value: '456',
-      change: '+3.1%',
-      changeType: 'increase',
+      value: dashboardData.stats.totalProducts.toLocaleString(),
+      change: dashboardService.formatPercentage(dashboardData.stats.productsChange),
+      changeType: dashboardData.stats.productsChange >= 0 ? 'increase' : 'decrease',
       icon: '📦'
     },
     {
-      name: 'Active Customers',
-      value: '2,345',
-      change: '+15.3%',
-      changeType: 'increase',
+      name: 'Total Customers',
+      value: dashboardData.stats.totalCustomers.toLocaleString(),
+      change: dashboardService.formatPercentage(dashboardData.stats.customersChange),
+      changeType: dashboardData.stats.customersChange >= 0 ? 'increase' : 'decrease',
       icon: '👥'
     }
   ];
 
-  const recentOrders = [
-    { id: '#1234', customer: 'John Doe', product: 'Premium Cotton T-Shirt', amount: '₹899', status: 'Completed' },
-    { id: '#1235', customer: 'Jane Smith', product: 'Classic Hoodie', amount: '₹1,299', status: 'Processing' },
-    { id: '#1236', customer: 'Mike Johnson', product: 'Slim Fit Jeans', amount: '₹1,599', status: 'Shipped' },
-    { id: '#1237', customer: 'Sarah Wilson', product: 'Designer Jacket', amount: '₹2,499', status: 'Pending' },
-    { id: '#1238', customer: 'David Brown', product: 'Cotton Shirt', amount: '₹799', status: 'Completed' }
-  ];
+  // Using real recent orders data
+  const recentOrders = dashboardData.recentOrders;
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Completed':
+    switch (status.toLowerCase()) {
+      case 'delivered':
+      case 'completed':
         return 'bg-green-100 text-green-800';
-      case 'Processing':
+      case 'confirmed':
+      case 'processing':
         return 'bg-blue-100 text-blue-800';
-      case 'Shipped':
+      case 'shipped':
         return 'bg-purple-100 text-purple-800';
-      case 'Pending':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  // Navigation handlers for Quick Actions
+  const handleAddProduct = () => {
+    router.push('/admin/products');
+  };
+
+  const handleViewOrders = () => {
+    router.push('/admin/orders');
+  };
+
+  const handleViewCustomers = () => {
+    router.push('/admin/customers');
+  };
+
+  const handleViewAllOrders = () => {
+    router.push('/admin/orders');
+  };
+
+  // Loading state
+  if (dashboardData.isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading dashboard data...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Error state
+  if (dashboardData.error) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Dashboard</h2>
+            <p className="text-gray-600 mb-4">{dashboardData.error}</p>
+            <button
+              onClick={loadDashboardData}
+              className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-8">
+        {/* Notification */}
+        {notification && (
+          <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            {notification.message}
+          </div>
+        )}
+
         {/* Page Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="mt-2 text-lg text-gray-600">
-                Welcome to your admin dashboard. Here's what's happening with your store today.
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600 mt-1">{currentDate}</p>
             </div>
-            <div className="hidden md:block">
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Today's Date</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {new Date().toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-              </div>
+            <div className="flex space-x-3">
+              <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                Export Data
+              </button>
+              <button 
+                onClick={loadDashboardData}
+                className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                disabled={dashboardData.isLoading}
+              >
+                {dashboardData.isLoading ? 'Refreshing...' : 'Refresh'}
+              </button>
             </div>
           </div>
         </div>
@@ -198,18 +330,28 @@ const AdminDashboard = () => {
             <div key={stat.name} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                    {stat.name}
-                  </p>
-                  <p className="mt-3 text-3xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                  <div className="mt-3 flex items-center text-sm">
-                    <div className="flex items-center bg-green-50 px-2 py-1 rounded-full">
-                      <svg className="w-4 h-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{stat.name}</h3>
+                  </div>
+                  <div className="flex items-baseline">
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  </div>
+                  <div className="mt-2 flex items-center">
+                    <div className={`flex items-center ${
+                      stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d={
+                          stat.changeType === 'increase' 
+                            ? "M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"
+                            : "M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z"
+                        } clipRule="evenodd" />
                       </svg>
-                      <span className="text-green-700 font-semibold">{stat.change}</span>
+                      <span className={`text-sm ${
+                        stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {stat.change}
+                      </span>
                     </div>
                     <span className="text-gray-500 ml-2 text-xs">vs last month</span>
                   </div>
@@ -232,7 +374,10 @@ const AdminDashboard = () => {
                 <h3 className="text-2xl font-bold text-gray-900">Recent Orders</h3>
                 <p className="text-gray-600 mt-1">Latest customer orders and their status</p>
               </div>
-              <button className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors duration-200 flex items-center space-x-2">
+              <button 
+                onClick={handleViewAllOrders}
+                className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors duration-200 flex items-center space-x-2"
+              >
                 <span>View all orders</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -314,7 +459,10 @@ const AdminDashboard = () => {
             <p className="text-gray-600 mt-1">Frequently used admin functions</p>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <button className="group flex items-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 text-left border border-gray-200 hover:border-gray-300 hover:shadow-md">
+            <button 
+              onClick={handleAddProduct}
+              className="group flex items-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 text-left border border-gray-200 hover:border-gray-300 hover:shadow-md"
+            >
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center group-hover:bg-gray-800 transition-colors duration-300">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -328,7 +476,10 @@ const AdminDashboard = () => {
               </div>
             </button>
 
-            <button className="group flex items-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 text-left border border-gray-200 hover:border-gray-300 hover:shadow-md">
+            <button 
+              onClick={handleViewOrders}
+              className="group flex items-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 text-left border border-gray-200 hover:border-gray-300 hover:shadow-md"
+            >
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center group-hover:bg-gray-800 transition-colors duration-300">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,23 +488,25 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <div className="ml-4">
-                <h4 className="text-base font-bold text-gray-900 group-hover:text-black transition-colors duration-300">View Analytics</h4>
-                <p className="text-sm text-gray-600 mt-1">Check detailed reports</p>
+                <h4 className="text-base font-bold text-gray-900 group-hover:text-black transition-colors duration-300">View Orders</h4>
+                <p className="text-sm text-gray-600 mt-1">Check detailed Orders</p>
               </div>
             </button>
 
-            <button className="group flex items-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 text-left border border-gray-200 hover:border-gray-300 hover:shadow-md">
+            <button 
+              onClick={handleViewCustomers}
+              className="group flex items-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 text-left border border-gray-200 hover:border-gray-300 hover:shadow-md"
+            >
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center group-hover:bg-gray-800 transition-colors duration-300">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <h4 className="text-base font-bold text-gray-900 group-hover:text-black transition-colors duration-300">Manage Settings</h4>
-                <p className="text-sm text-gray-600 mt-1">Configure store settings</p>
+                <h4 className="text-base font-bold text-gray-900 group-hover:text-black transition-colors duration-300">View Customers</h4>
+                <p className="text-sm text-gray-600 mt-1">Check detailed Customer</p>
               </div>
             </button>
           </div>

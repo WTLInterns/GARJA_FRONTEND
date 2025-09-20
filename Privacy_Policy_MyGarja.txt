@@ -1,0 +1,789 @@
+Privacy Policy – MyGarja.com
+Effective Date: [19/09/2025]
+Welcome to MyGarja.com (“Website,” “we,” “our,” or “us”). Your privacy and trust are very important to us. This Privacy Policy explains how we collect, use, disclose, and safeguard your personal and non-personal information when you visit or use our website and related services.
+By using MyGarja.com, you agree to the practices described in this Privacy Policy. We are committed to handling your data responsibly, in compliance with the Information Technology Act, 2000, the Information Technology (Reasonable Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011, and other applicable Indian data protection laws.
+
+1. Introduction – Our Commitment to Privacy
+At MyGarja.com, we value your privacy as much as we value delivering high-quality products and services. This Privacy Policy serves as a transparent guide, ensuring you understand:
+What information we collect.
+
+
+How we use, share, and protect that information.
+
+
+What rights you have as a user.
+
+
+Our goal is to create a secure, trustworthy online experience where you feel confident sharing information with us.
+
+2. Information We Collect
+We collect two main types of information when you use MyGarja.com:
+a) Personal Information
+This refers to data that identifies you as an individual. We may collect the following details:
+Name
+
+
+Email address
+
+
+Phone number
+
+
+Billing and shipping address
+
+
+Payment details (processed securely through payment gateways, not stored on our servers)
+
+
+Account login information (if you register on our website)
+
+
+You voluntarily provide this information when you create an account, place an order, subscribe to our newsletters, or contact us.
+b) Non-Personal Information
+This includes information that does not directly identify you, such as:
+Browser type and version
+
+
+Device type and operating system
+
+
+IP address
+
+
+Geographical location (approximate)
+
+
+Browsing behavior (pages visited, time spent, referral sources)
+
+
+Cookies and tracking data
+
+
+This information helps us improve our website performance and user experience.
+
+3. How We Use Your Information
+The information collected is used for lawful and legitimate business purposes, including but not limited to:
+Order Processing & Delivery – To process your purchases, verify payments, and deliver products/services.
+
+
+Customer Communication – To respond to inquiries, send confirmations, and provide updates.
+
+
+Personalization – To tailor website content, product recommendations, and marketing offers to your preferences.
+
+
+Marketing & Promotions – To share newsletters, promotional campaigns, offers, and product updates (with your consent).
+
+
+Service Improvement – To analyze browsing behavior and feedback, helping us enhance website functionality.
+
+
+Legal Compliance – To comply with applicable laws, regulations, and lawful requests.
+
+
+We do not sell, rent, or trade your personal data to third parties for marketing purposes.
+
+4. Cookies & Tracking Technologies
+Like most websites, we use cookies and similar technologies to enhance user experience.
+What are Cookies? Small text files stored on your device when you visit our site.
+
+
+Why We Use Cookies:
+
+
+To remember user preferences.
+
+
+To enable smooth login sessions.
+
+
+To analyze website traffic and usage patterns.
+
+
+To deliver relevant advertisements.
+
+
+User Choice: You can control cookies through your browser settings. Disabling cookies may limit certain features of our website.
+
+5. Data Sharing & Disclosure
+We respect your privacy and only share your information under specific circumstances:
+Third-Party Service Providers: With trusted partners (payment processors, logistics companies, IT support) who help us run our operations.
+
+
+Legal Requirements: When required by law, regulation, legal process, or government request.
+
+
+Business Transfers: In case of a merger, acquisition, or sale of assets, your data may be transferred as part of the transaction.
+
+
+Fraud Prevention & Security: To protect against unauthorized transactions, fraud, and security breaches.
+
+
+All third-party partners are required to handle your data with confidentiality and only for the agreed purpose.
+
+6. Data Security
+We adopt reasonable security measures to protect your information against unauthorized access, alteration, disclosure, or destruction. These include:
+Secure Socket Layer (SSL) encryption for transactions.
+
+
+Firewalls and malware protection to safeguard servers.
+
+
+Access controls and authentication systems for internal data use.
+
+
+Regular monitoring of systems for vulnerabilities.
+
+
+Despite our efforts, no system can be guaranteed 100% secure. We encourage users to maintain strong passwords and be cautious with online sharing.
+
+7. User Rights
+As a user of MyGarja.com, you have the following rights regarding your personal data:
+Access: Request a copy of the personal data we hold about you.
+
+
+Correction: Update or correct inaccurate or incomplete data.
+
+
+Deletion: Request deletion of your data, subject to legal or business obligations.
+
+
+Withdrawal of Consent: Opt out of receiving marketing communications at any time.
+
+
+Data Portability: Request transfer of your data to another service provider, where applicable.
+
+
+To exercise these rights, please contact us at the details provided below.
+
+8. Third-Party Links & Services
+Our website may contain links to third-party websites, applications, or services. Please note:
+We are not responsible for the privacy practices, policies, or content of external sites.
+
+
+We encourage users to review the privacy policies of those third-party platforms before sharing personal information.
+
+
+
+9. Children’s Privacy
+Our services are not directed at individuals under 18 years of age. We do not knowingly collect personal information from children.
+If we discover that a child under 18 has provided us with personal data, we will promptly delete it.
+
+
+Parents/guardians who believe their child’s information has been shared should contact us immediately.
+
+
+
+10. Changes to This Policy
+We may update or revise this Privacy Policy from time to time to reflect changes in technology, law, or business practices.
+Notification: Updates will be posted on this page with a new “Effective Date.”
+
+
+User Responsibility: We encourage you to review this policy periodically to stay informed about how we protect your data.
+
+
+11. Contact Information
+If you have any questions, concerns, or requests regarding this Privacy Policy or how your data is handled, please contact us:
+MyGarja.com – Privacy Team
+Email: contact@mygarja.com
+
+
+Phone: +91
+
+
+Office Address: Office No. 009, 1st Floor, City Vista, Kharadi, Pune – 411014, India
+
+
+We are committed to addressing your concerns promptly and ensuring that your privacy is safeguarded at all times.
+
+========================================================================================================================================================================================================================
+
+
+
+
+
+Terms of Service – MyGarja.com
+Effective Date: 19/09/2025
+Welcome to MyGarja.com (“Website,” “we,” “our,” or “us”). These Terms of Service (“Terms”) govern your access to and use of our website, services, and products. By visiting, browsing, or purchasing from MyGarja.com, you acknowledge and agree to be bound by these Terms.
+If you do not agree with any part of these Terms, please refrain from using our website.
+
+1. Introduction & Acceptance of Terms
+By accessing or using MyGarja.com, you confirm that:
+You have read, understood, and accepted these Terms.
+
+
+You agree to comply with all applicable laws and regulations.
+
+
+You consent to be bound by any policies, guidelines, or rules posted on the website, including our Privacy Policy.
+
+
+These Terms constitute a legally binding agreement between you (the “User” or “Customer”) and MyGarja.com.
+
+2. Eligibility to Use
+To use our services, you must:
+Be at least 18 years of age.
+
+
+Have the legal capacity to enter into a binding contract under the Indian Contract Act, 1872.
+
+
+Provide accurate and verifiable information when creating an account or placing an order.
+
+
+If you are under 18, you may use the website only with the involvement and supervision of a parent or guardian.
+
+3. User Responsibilities
+When using MyGarja.com, you agree to:
+Account Creation – If you register an account, you are responsible for maintaining confidentiality of your login details. Any activities conducted through your account will be considered authorized by you.
+
+
+Accuracy of Information – You must provide true, accurate, current, and complete information during registration, order placement, and communication.
+
+
+Prohibited Activities – You shall not:
+
+
+Use the website for illegal or unauthorized purposes.
+
+
+Engage in fraudulent transactions or provide false information.
+
+
+Upload harmful code, malware, or attempt to hack our systems.
+
+
+Post defamatory, abusive, or offensive content.
+
+
+Use the website to spam, harass, or mislead other users.
+
+
+Violation of these responsibilities may result in suspension or termination of your account.
+
+4. Products & Services
+MyGarja.com is a fashion e-commerce platform specializing in men’s clothing and accessories.
+All product descriptions, images, specifications, and prices are subject to change without prior notice.
+
+
+We make reasonable efforts to display product colors and details accurately, but variations may occur due to device settings.
+
+
+We reserve the right to discontinue or modify any product at any time.
+
+
+
+5. Orders & Payments
+Placing Orders – By placing an order, you agree to purchase the selected products in accordance with these Terms.
+
+
+Product Availability – All orders are subject to stock availability. In case a product is unavailable, we may cancel the order and refund the amount.
+
+
+Pricing – Prices listed on MyGarja.com are in Indian Rupees (INR) and inclusive of applicable taxes unless stated otherwise.
+
+
+Payment Methods – We accept secure payments via credit cards, debit cards, UPI, net banking, and other digital payment methods provided by third-party payment gateways.
+
+
+Billing Information – You agree to provide accurate billing and payment details. Any order placed with fraudulent or incorrect information may be canceled.
+
+
+
+6. Shipping & Delivery
+We aim to deliver products within the timelines displayed at checkout. However, delivery times may vary due to logistics or unforeseen circumstances.
+
+
+Shipping charges, if applicable, will be displayed during checkout.
+
+
+Risk of loss passes to the customer once the product is shipped.
+
+
+We are not liable for delays caused by courier partners, natural disasters, strikes, or force majeure events.
+
+
+
+7. Returns, Refunds & Exchanges
+We strive for customer satisfaction and provide a return/refund policy under the following conditions:
+Eligibility for Returns/Exchanges – Products may be returned or exchanged within 7 days of delivery, provided they are unused, unworn, and in original packaging with tags intact.
+
+
+Non-Returnable Items – Innerwear, discounted items, and customized products are not eligible for return/refund.
+
+
+Refunds – Approved refunds will be processed to the original payment method within 7–10 working days.
+
+
+Damaged or Defective Products – If you receive a damaged or defective item, please contact us immediately with proof (images).
+
+
+
+8. Intellectual Property Rights
+All content on MyGarja.com, including text, images, designs, logos, trademarks, product names, and graphics, is the intellectual property of MyGarja and protected under Indian Copyright and Trademark Laws.
+
+
+The brand name “Garja” and its associated logos are registered and may not be copied, reproduced, or used without prior written consent.
+
+
+Unauthorized use of intellectual property may result in legal action.
+
+
+
+9. Limitation of Liability
+We make every effort to ensure accuracy of product details and services, but we do not warrant that the website will be error-free or uninterrupted.
+
+
+MyGarja.com shall not be liable for:
+
+
+Any indirect, incidental, or consequential damages.
+
+
+Product misuse, size misfits, or customer negligence.
+
+
+Issues arising from third-party services, such as payment gateways or delivery partners.
+
+
+Your use of the website and purchase of products is at your own risk.
+
+10. User Content & Reviews
+Users may post reviews, ratings, or comments on our website. By doing so, you agree that:
+Your content will be respectful, accurate, and not misleading.
+
+
+You grant MyGarja.com a non-exclusive, royalty-free license to use, reproduce, and display your submitted content.
+
+
+We reserve the right to remove or edit content that violates our policies or is deemed offensive.
+
+
+
+11. Termination of Services
+We may suspend or terminate your account or access to the website at our sole discretion, without notice, if you:
+Breach these Terms.
+
+
+Engage in fraudulent or harmful activities.
+
+
+Violate applicable laws.
+
+
+Upon termination, you must immediately stop using our services, and any pending obligations (such as payments) remain enforceable.
+
+12. Privacy Policy Reference
+Your use of MyGarja.com is also governed by our [Privacy Policy], which explains how we collect, use, and protect your personal information. Please read it carefully.
+
+13. Third-Party Links
+Our website may contain links to external websites operated by third parties. Please note:
+We are not responsible for the availability, content, or practices of these external sites.
+
+
+Accessing such third-party links is at your own risk.
+
+
+
+14. Governing Law & Jurisdiction
+These Terms are governed by the laws of India. In case of disputes, the exclusive jurisdiction shall lie with the competent courts of Pune, Maharashtra, India.
+
+15. Changes to Terms
+We may revise, update, or modify these Terms at any time without prior notice.
+Updates will be posted on this page with the revised effective date.
+
+
+Continued use of the website after changes indicates your acceptance of the new Terms.
+
+
+
+16. Contact Information
+For questions, complaints, or clarifications regarding these Terms, please contact us:
+MyGarja.com – Legal Team
+Office Address: Office No. 009, 1st Floor, City Vista, Kharadi, Pune – 411014, India
+
+
+Email: contact@mygarja.com
+
+
+Phone: +91 [Insert Contact Number]
+
+
+
+Conclusion
+By using MyGarja.com, you acknowledge that you have read, understood, and agreed to these Terms of Service. We encourage you to review these Terms regularly to stay informed of your rights and obligations.
+
+
+
+
+================================================================================================================================================
+
+
+
+
+Cookie Policy – MyGarja.com
+Effective Date: 19/09/2025
+
+1. Introduction
+At MyGarja.com (“Website,” “we,” “our,” or “us”), we believe in maintaining complete transparency about how we handle your information. This Cookie Policy explains how we use cookies and similar tracking technologies when you visit our website.
+Cookies help us provide you with a smooth, secure, and personalized shopping experience while ensuring that our services function efficiently. By sharing this policy, our goal is to empower you with clear information about what cookies are, how we use them, and how you can control them.
+This Cookie Policy should be read along with our [Privacy Policy], which explains how we collect, use, and protect personal data.
+
+2. What Are Cookies?
+Cookies are small text files that are placed on your computer, smartphone, or tablet when you visit a website. They are widely used across the internet to:
+Help websites remember your preferences.
+
+
+Enable secure logins and smooth checkout processes.
+
+
+Analyze browsing behavior for performance improvement.
+
+
+Deliver relevant advertisements and offers.
+
+
+Cookies are not harmful programs. They cannot read information stored on your device or spread viruses. Instead, they act as memory tools that make your online interactions with MyGarja.com more seamless.
+
+3. Types of Cookies We Use
+We use different categories of cookies to ensure you get the best experience while browsing and shopping with us:
+a) Strictly Necessary Cookies
+These cookies are essential for the website to function properly.
+
+
+They enable basic operations like secure login, shopping cart functionality, and payment processing.
+
+
+Without these cookies, you cannot use certain features of our website.
+
+
+b) Performance Cookies
+These cookies collect anonymous data about how visitors use our website.
+
+
+They help us analyze traffic, identify popular pages, and monitor loading speed.
+
+
+Example: Tracking how long users spend on a product page to improve its content.
+
+
+c) Functionality Cookies
+These cookies remember your preferences, such as language selection, region, or saved login details.
+
+
+They personalize your experience so you don’t need to re-enter information each time you visit.
+
+
+Example: Keeping items in your shopping cart for your next visit.
+
+
+d) Targeting & Advertising Cookies
+These cookies track browsing habits and show you relevant ads, both on our website and across partner platforms.
+
+
+They help us measure the effectiveness of marketing campaigns.
+
+
+Example: If you viewed men’s shirts, you may see related ads while browsing other websites.
+
+
+
+4. How We Use Cookies
+We use cookies for several important purposes, including:
+Improving Website Functionality – Ensuring that pages load quickly and transactions are secure.
+
+
+Personalizing Content – Displaying recommendations based on your previous interactions.
+
+
+Analyzing User Behavior – Understanding customer journeys to enhance design, products, and services.
+
+
+Marketing & Advertising – Delivering offers that match your interests.
+
+
+Securing Transactions – Detecting suspicious activity and preventing fraudulent payments.
+
+
+
+5. Third-Party Cookies
+In addition to cookies set by MyGarja.com, we also allow trusted third parties to place cookies for specific purposes:
+Analytics Providers (e.g., Google Analytics): To track visitor behavior and generate reports.
+
+
+Advertising Partners: To deliver targeted advertisements across different websites.
+
+
+Social Media Platforms: To enable features like “Share” buttons and embedded posts.
+
+
+Please note that third-party cookies are controlled by their respective providers and subject to their privacy policies.
+
+6. Managing & Controlling Cookies
+You have full control over cookies. Here’s how you can manage them:
+Browser Settings: Most browsers allow you to block, delete, or disable cookies under “Settings” or “Preferences.”
+
+
+Opt-Out Tools: You can opt out of targeted advertising using tools provided by ad networks.
+
+
+Custom Choices: Some cookies, especially strictly necessary ones, cannot be disabled as they are vital for site operation.
+
+
+If you choose to disable cookies, please remember that some sections of the website may not function as intended.
+
+7. Consent to Cookies
+By continuing to use MyGarja.com, you consent to the placement of cookies on your device in accordance with this Cookie Policy.
+When you first visit our site, a cookie banner will appear asking for your consent.
+
+
+By clicking “Accept” or continuing to browse, you agree to our use of cookies as explained in this policy.
+
+
+You can withdraw consent at any time by adjusting your browser settings.
+
+
+
+8. Impact of Disabling Cookies
+While you are free to block or delete cookies, please note the potential impact:
+You may not be able to add items to your shopping cart.
+
+
+Payment transactions might fail or be interrupted.
+
+
+Saved preferences such as login credentials may not be remembered.
+
+
+Personalized recommendations and advertisements will not display.
+
+
+Certain website features may become slow or unavailable.
+
+
+To ensure a smooth shopping experience, we recommend keeping cookies enabled.
+
+9. Updates to This Cookie Policy
+We may update this Cookie Policy from time to time to reflect changes in technology, law, or our business practices.
+Any updates will be posted on this page with a new Effective Date.
+
+
+We encourage you to review this policy periodically to stay informed.
+
+
+
+10. Privacy Policy Reference
+For detailed information about how we handle and protect your personal data, please read our [Privacy Policy]. That policy explains data collection, storage, and user rights in greater detail.
+
+11. Contact Information
+If you have any questions, complaints, or requests about our Cookie Policy, please reach out to us:
+MyGarja.com – Privacy Team
+Office Address: Office No. 009, 1st Floor, City Vista, Kharadi, Pune – 411014, India
+
+
+Email: contact@mygarja.com
+
+
+Phone: +91 [Insert Contact Number]
+
+
+We are committed to responding to your concerns promptly and transparently.
+
+Conclusion
+Cookies are a vital part of how MyGarja.com functions, helping us deliver a fast, secure, and personalized shopping experience. By clearly explaining our use of cookies, we aim to give you confidence in how we handle your browsing information.
+You are always in control of your cookie preferences, and we respect your choices while ensuring compliance with Indian IT laws and global best practices.
+
+
+========================================================================================================================================================================================================================
+
+
+
+
+Refund & Return Policy – MyGarja.com
+Effective Date: 19/09/2025
+
+1. Introduction
+At MyGarja.com, we value our customers and strive to provide high-quality men’s fashion products with a seamless online shopping experience. We understand that sometimes, a purchase may not go as planned. That is why we have designed this Refund & Return Policy to ensure transparency, fairness, and trust in all our transactions.
+Our goal is simple – to make sure you shop with confidence, knowing that if something goes wrong, we have your back. This policy outlines the conditions, process, and timelines for requesting refunds, returns, or exchanges. By shopping with us, you agree to the terms set out in this policy.
+
+2. Eligibility for Refunds & Returns
+We accept refund or return requests under the following circumstances:
+Defective Product: If the product you receive has manufacturing defects, fabric issues, or quality faults.
+
+
+Wrong Item Delivered: If you receive a product different from what you ordered.
+
+
+Damaged in Transit: If the package arrives visibly damaged or tampered with, resulting in damage to the product.
+
+
+Sizing Issues: If the product does not fit as per the size chart, you may request an exchange or return (conditions apply).
+
+
+Unhappy with Purchase: If you are not satisfied with the product, returns may be accepted if the item is unused and in original condition.
+
+
+To qualify, products must be:
+Unused, unworn, and unwashed.
+
+
+In original packaging with tags and labels intact.
+
+
+Returned with proof of purchase (invoice/order confirmation).
+
+
+
+3. Non-Refundable/Non-Returnable Items
+Certain items are not eligible for refunds or returns due to hygiene and customization reasons:
+Innerwear and undergarments.
+
+
+Discounted or clearance sale items (unless defective/damaged).
+
+
+Customized or personalized clothing.
+
+
+Products damaged due to misuse, negligence, or improper washing.
+
+
+Items returned without original tags, packaging, or invoice.
+
+
+
+4. Timeframe for Requests
+Customers must raise a return, refund, or exchange request within:
+7 days from the date of delivery for defective, wrong, or damaged products.
+
+
+10 days from the date of delivery for size issues or dissatisfaction.
+
+
+Requests raised after this period will not be entertained unless required by law.
+
+5. Return Process
+To make the process smooth, here’s how you can initiate a return:
+Contact Support: Email us at contact@mygarja.com with your order ID, reason for return, and photographs (if applicable).
+
+
+Verification: Our customer support team will review the request and confirm eligibility.
+
+
+Pickup/Shipping:
+
+
+For eligible returns, we may arrange a pickup from your address.
+
+
+In some cases, you may need to ship the item back to us.
+
+
+Inspection: Once the product reaches us, our quality team will inspect it for compliance with the eligibility criteria.
+
+
+Approval/Rejection: We will notify you about the status of your return and next steps.
+
+
+
+6. Refund Process
+If your return is approved:
+Mode of Refund: Refunds will be processed back to your original payment method (credit card, debit card, UPI, net banking, wallet) or issued as store credit if you prefer.
+
+
+Timeline: Refunds are typically processed within 7–14 working days after approval. Bank and payment gateway delays may occasionally extend this period.
+
+
+Confirmation: You will receive an email confirmation once the refund is initiated.
+
+
+
+7. Exchange Policy
+If you wish to exchange a product (e.g., for size or color):
+Exchanges are subject to product availability.
+
+
+Only one exchange per order is allowed.
+
+
+If the desired product is unavailable, we will process a refund instead.
+
+
+Exchanges follow the same inspection and approval process as returns.
+
+
+
+8. Shipping Costs
+Defective/Wrong/Damaged Products: If the fault lies with MyGarja.com, we will bear the full shipping cost.
+
+
+Other Returns (e.g., size issues, dissatisfaction): Customers may be responsible for return shipping charges.
+
+
+Non-Refundable Shipping Fees: Original shipping costs (if any) are non-refundable.
+
+
+
+9. Damaged or Incorrect Products
+If you receive a damaged or wrong product:
+Notify us within 48 hours of delivery with clear photographs.
+
+
+We will arrange for a free replacement, exchange, or full refund.
+
+
+Our responsibility ends once a correct replacement/refund is provided.
+
+
+
+10. Late or Missing Refunds
+If you haven’t received a refund within the specified timeline:
+Recheck your bank account or payment app.
+
+
+Contact your bank or payment provider as processing delays are common.
+
+
+If you still haven’t received it after 14 working days, contact us at contact@mygarja.com with your order and refund details.
+
+
+We will assist you promptly in resolving the issue.
+
+11. Third-Party Products & Payments
+Payments made through third-party gateways (Razorpay, Paytm, etc.) are subject to their terms and conditions.
+
+
+We are not responsible for delays, technical issues, or failures caused by external payment processors.
+
+
+Similarly, delays caused by courier or shipping partners are outside our direct control, but we will support you in resolving such issues.
+
+
+
+12. Policy Updates
+MyGarja.com reserves the right to modify, update, or revise this Refund & Return Policy at any time without prior notice.
+Any changes will be updated on this page with a revised effective date.
+
+
+Continued use of our website or purchase of products after changes indicates your acceptance of the revised policy.
+
+
+
+13. Customer Support & Contact Information
+For any refund, return, or exchange-related questions, please contact us:
+MyGarja.com – Customer Care Team
+Office Address: Office No. 009, 1st Floor, City Vista, Kharadi, Pune – 411014, India
+
+
+Email: contact@mygarja.com
+
+
+Phone: +91 [Insert Contact Number]
+
+
+Our support team is available to guide you through the process and ensure your concerns are addressed quickly.
+
+Conclusion
+At MyGarja.com, our refund and return policy reflects our customer-first approach. We aim to make your shopping experience worry-free, offering clear guidelines for when and how you can return, exchange, or request refunds.
+By balancing flexibility for customers and fairness for the company, this policy helps us maintain trust while delivering high-quality fashion products to men across India.
+We encourage you to read this policy before making a purchase so you are fully informed of your rights and responsibilities. 

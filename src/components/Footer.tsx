@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 const Footer = () => {
   return (
     <footer className="bg-white border-t border-gray-200">
@@ -61,12 +63,12 @@ const Footer = () => {
                   <div className="space-y-3 sm:space-y-4">
                     <h4 className="text-base sm:text-lg font-semibold text-black">Quick Links</h4>
                     <ul className="space-y-2">
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">About Us</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">New Arrivals</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Formal Wear</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Casual Wear</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Accessories</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Sale</a></li>
+                      <li><Link href="/about" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">About Us</Link></li>
+                      <li><Link href="/products?category=t-shirts" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">T-Shirts</Link></li>
+                      <li><Link href="/products?category=hoodies" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Hoodies</Link></li>
+                      {/* <li><Link href="/products?category=casual" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Casual Wear</Link></li>
+                      <li><Link href="/products?category=accessories" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Accessories</Link></li>
+                      <li><Link href="/products?sale=true" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Sale</Link></li> */}
                     </ul>
                   </div>
 
@@ -74,12 +76,12 @@ const Footer = () => {
                   <div className="space-y-3 sm:space-y-4">
                     <h4 className="text-base sm:text-lg font-semibold text-black">Customer Service</h4>
                     <ul className="space-y-2">
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Contact Us</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Size Guide</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Shipping Info</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Returns & Exchanges</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">FAQ</a></li>
-                      <li><a href="#" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Track Your Order</a></li>
+                      <li><Link href="/contact" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Contact Us</Link></li>
+                      {/* <li><Link href="/size-guide" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Size Guide</Link></li>
+                      <li><Link href="/shipping-info" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Shipping Info</Link></li>
+                      <li><Link href="/returns" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Returns & Exchanges</Link></li>
+                      <li><Link href="/faq" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">FAQ</Link></li>*/}
+                      <li><Link href="/track-order" className="text-gray-600 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Track Your Order</Link></li> 
                     </ul>
                   </div>
 
@@ -119,10 +121,10 @@ const Footer = () => {
                       </p>
                     </div>
                     <div className="flex flex-wrap justify-center sm:justify-end space-x-4 sm:space-x-6">
-                      <a href="#" className="text-gray-500 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Privacy Policy</a>
-                      <a href="#" className="text-gray-500 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Terms of Service</a>
-                      <a href="#" className="text-gray-500 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Cookie Policy</a>
-                      <a href="#" className="text-gray-500 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Refund Policy</a>
+                      <Link href="/privacy-policy" className="text-gray-500 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Privacy Policy</Link>
+                      <Link href="/terms-of-service" className="text-gray-500 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Terms of Service</Link>
+                      {/* <Link href="/cookie-policy" className="text-gray-500 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Cookie Policy</Link>
+                      <Link href="/refund-policy" className="text-gray-500 hover:text-black transition-colors duration-300 text-xs sm:text-sm">Refund Policy</Link> */}
                     </div>
                   </div>
                 </div>
